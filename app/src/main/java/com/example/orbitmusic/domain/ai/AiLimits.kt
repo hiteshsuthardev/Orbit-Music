@@ -14,12 +14,15 @@ data class AiAllowance(
     /** When blocked by the window: when the oldest counted request expires (epoch millis). */
     val nextRequestAt: Long?,
     val totalUsed: Int,
+    /** When the next used request in the window frees up again (null if none are used). */
+    val nextRefillAt: Long? = null,
 ) {
     val totalLimit: Int get() = AiLimits.TOTAL_REQUESTS
     val windowLimit: Int get() = AiLimits.REQUESTS_PER_WINDOW
     val isLifetimeExhausted: Boolean get() = totalUsed >= AiLimits.TOTAL_REQUESTS
     val isWindowExhausted: Boolean get() = remainingInWindow <= 0
     val canSend: Boolean get() = !isLifetimeExhausted && !isWindowExhausted
+    val totalRemaining: Int get() = (AiLimits.TOTAL_REQUESTS - totalUsed).coerceAtLeast(0)
 }
 
 /**
@@ -37,7 +40,12 @@ object AiLimits {
         val remaining = (REQUESTS_PER_WINDOW - inWindow.size).coerceAtLeast(0)
         // A slot frees up when enough of the oldest requests leave the window.
         val nextAt = if (remaining == 0) inWindow[inWindow.size - REQUESTS_PER_WINDOW] + WINDOW_MS else null
-        return AiAllowance(remainingInWindow = remaining, nextRequestAt = nextAt, totalUsed = usage.totalRequests)
+        return AiAllowance(
+            remainingInWindow = remaining,
+            nextRequestAt = nextAt,
+            totalUsed = usage.totalRequests,
+            nextRefillAt = inWindow.firstOrNull()?.plus(WINDOW_MS),
+        )
     }
 
     /** [usage] with one more request at [now] (keeping only times still inside the window). */

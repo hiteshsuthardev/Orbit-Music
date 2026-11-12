@@ -1,7 +1,7 @@
 package com.example.orbitmusic.domain.update
 
 import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 /** The latest release, as described by version.json. */
 data class AppUpdate(
@@ -43,8 +43,11 @@ data class UpdateHistory(
 
 /** The update rules, kept free of Android so they are unit-tested directly. */
 object UpdatePolicy {
-    /** Automatic checks (start / resume) run at most this often. */
-    val CHECK_INTERVAL_MS: Long = 6.hours.inWholeMilliseconds
+    /**
+     * Automatic checks (start / resume) run at most this often: short, so a new release shows
+     * up almost right away, without re-checking on every quick app switch. version.json is tiny.
+     */
+    val CHECK_INTERVAL_MS: Long = 15.minutes.inWholeMilliseconds
 
     /** The same optional update is offered at most once in this period. */
     val PROMPT_INTERVAL_MS: Long = 1.days.inWholeMilliseconds
@@ -56,7 +59,8 @@ object UpdatePolicy {
     }
 
     fun isAutomaticCheckDue(history: UpdateHistory, now: Long): Boolean =
-        now - history.lastCheckAt >= CHECK_INTERVAL_MS
+        // A last check "in the future" means the phone's clock changed: check again.
+        now - history.lastCheckAt >= CHECK_INTERVAL_MS || now < history.lastCheckAt
 
     /**
      * Whether to show the optional-update dialog. A manual "Check for updates" always shows

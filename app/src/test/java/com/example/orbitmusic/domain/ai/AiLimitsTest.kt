@@ -38,6 +38,17 @@ class AiLimitsTest {
     }
 
     @Test
+    fun reportsNextRefillAndTotalLeft() {
+        val now = 10 * hour
+        val usage = AiUsage(listOf(now - hour, now - 2 * hour), totalRequests = 30)
+        val allowance = AiLimits.allowance(usage, now)
+        // The oldest counted request (2h ago) comes back 3h after it was sent.
+        assertEquals(now + hour, allowance.nextRefillAt)
+        assertEquals(190, allowance.totalRemaining)
+        assertNull(AiLimits.allowance(AiUsage(), now).nextRefillAt)
+    }
+
+    @Test
     fun oldRequestsLeaveTheWindow() {
         val now = 10 * hour
         val usage = AiUsage(List(20) { now - 3 * hour - it }, totalRequests = 20)

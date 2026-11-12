@@ -307,7 +307,24 @@
     <string name="lyrics_source">Lyrics from %1$s</string>
 
     <!-- Orbit AI -->
-    <string name="ai_requests_left">%1$d of %2$d requests left (every 3 hours)</string>
+    <string name="ai_usage_left">%1$d of %2$d requests left</string>
+    <string name="ai_usage_next_back">One more at %1$s</string>
+    <string name="ai_usage_every_window">Refills every 3 hours</string>
+    <string name="ai_usage_total">%1$d of %2$d in total</string>
+    <string name="ai_usage_description">Orbit AI: %1$d of %2$d requests left for the next 3 hours, %3$d of %4$d left in total</string>
+    <string name="ai_save_to_youtube">Add playlist to YouTube</string>
+    <string name="ai_save_progress">Adding to YouTube… %1$d of %2$d</string>
+    <string name="ai_save_open">Open</string>
+    <string name="ai_save_retry">Try again</string>
+    <plurals name="ai_saved">
+        <item quantity="one">Saved to YouTube with %d song</item>
+        <item quantity="other">Saved to YouTube with %d songs</item>
+    </plurals>
+    <plurals name="ai_saved_missing">
+        <item quantity="one">Private playlist · %d song wasn’t found</item>
+        <item quantity="other">Private playlist · %d songs weren’t found</item>
+    </plurals>
+    <string name="ai_saved_private">Private playlist in your YouTube account</string>
     <string name="ai_window_limit_title">You\u2019ve used your %1$d requests for now</string>
     <string name="ai_window_limit_body">Orbit AI allows %1$d requests every 3 hours. You can ask again at %2$s.</string>
     <string name="ai_window_limit_body_soon">Orbit AI allows %1$d requests every 3 hours. You can ask again soon.</string>

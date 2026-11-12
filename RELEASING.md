@@ -106,7 +106,7 @@ Open the app on a phone with the previous version and tap **Profile → Check fo
 ## How the app updates itself
 
 - Checks `version.json` when the app opens and when it comes back to the foreground, at most
-  once every 6 hours, plus whenever the user taps **Check for updates**. Failures are ignored.
+  once every 15 minutes, plus whenever the user taps **Check for updates**. Failures are ignored.
 - **Optional update:** a dialog with the version and notes, offered at most once a day per
   version, with **Update now**, **Later** and **Skip this version**.
 - **Required update** (`forceUpdate`, or the installed version is below `minVersionCode`): a

@@ -39,11 +39,14 @@ class UpdatePolicyTest {
     }
 
     @Test
-    fun automaticChecksAtMostEverySixHours() {
+    fun automaticChecksAtMostEveryFifteenMinutes() {
+        val minute = 60 * 1_000L
         val history = UpdateHistory(lastCheckAt = 10 * hour)
-        assertFalse(UpdatePolicy.isAutomaticCheckDue(history, 15 * hour))
-        assertTrue(UpdatePolicy.isAutomaticCheckDue(history, 16 * hour))
+        assertFalse(UpdatePolicy.isAutomaticCheckDue(history, 10 * hour + 14 * minute))
+        assertTrue(UpdatePolicy.isAutomaticCheckDue(history, 10 * hour + 15 * minute))
         assertTrue(UpdatePolicy.isAutomaticCheckDue(UpdateHistory(), 10 * hour))
+        // Clock moved back: don't wait for it to catch up.
+        assertTrue(UpdatePolicy.isAutomaticCheckDue(history, 9 * hour))
     }
 
     @Test
