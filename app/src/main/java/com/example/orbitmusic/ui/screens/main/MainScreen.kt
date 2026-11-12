@@ -236,7 +236,7 @@ fun MainScreen() {
                         onTabRequestConsumed = { libraryTabRequest = null },
                     )
                 }
-                composable<OrbitAiRoute> { OrbitAiScreen(contentPadding = contentPadding) }
+                composable<OrbitAiRoute> { OrbitAiScreen(contentPadding = contentPadding, onOpenPlaylist = openPlaylist) }
                 composable<SettingsRoute> {
                     SettingsScreen(contentPadding = contentPadding)
                 }

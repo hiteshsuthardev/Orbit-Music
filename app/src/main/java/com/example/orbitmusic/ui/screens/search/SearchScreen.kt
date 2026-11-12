@@ -27,8 +27,14 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Album
+import androidx.compose.material.icons.rounded.Celebration
+import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
+import androidx.compose.material.icons.rounded.Spa
+import androidx.compose.material.icons.rounded.Whatshot
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +45,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -81,16 +89,43 @@ import com.example.orbitmusic.ui.theme.orbit.OrbitSearchField
 import com.example.orbitmusic.ui.theme.orbit.OrbitTextButton
 import com.example.orbitmusic.ui.theme.orbit.OrbitTheme
 
-/** A Browse tile: its label and the search it runs (results are cached in Room for 24h). */
-private data class BrowseCategory(@StringRes val label: Int, @StringRes val query: Int, val seed: String)
+/**
+ * A Browse tile: its label, the search it runs (results are cached in Room for 24h), and its
+ * look: an icon and gradient, with a song's artwork once that search has been cached.
+ */
+private class BrowseCategory(
+    @param:StringRes val label: Int,
+    @param:StringRes val query: Int,
+    val seed: String,
+    val icon: ImageVector,
+    val gradient: List<Color>,
+)
 
 private val browseCategories = listOf(
-    BrowseCategory(R.string.search_category_trending, R.string.search_category_trending_query, "browse-trending"),
-    BrowseCategory(R.string.search_category_chill, R.string.search_category_chill_query, "browse-chill"),
-    BrowseCategory(R.string.search_category_workout, R.string.search_category_workout_query, "browse-workout"),
-    BrowseCategory(R.string.search_category_focus, R.string.search_category_focus_query, "browse-focus"),
-    BrowseCategory(R.string.search_category_party, R.string.search_category_party_query, "browse-party"),
-    BrowseCategory(R.string.search_category_indie, R.string.search_category_indie_query, "browse-indie"),
+    BrowseCategory(
+        R.string.search_category_trending, R.string.search_category_trending_query, "browse-trending",
+        Icons.Rounded.Whatshot, listOf(Color(0xFFFF3D71), Color(0xFFFF8A3D)),
+    ),
+    BrowseCategory(
+        R.string.search_category_chill, R.string.search_category_chill_query, "browse-chill",
+        Icons.Rounded.Spa, listOf(Color(0xFF1FA2B8), Color(0xFF3A47D5)),
+    ),
+    BrowseCategory(
+        R.string.search_category_workout, R.string.search_category_workout_query, "browse-workout",
+        Icons.Rounded.FitnessCenter, listOf(Color(0xFFE5413B), Color(0xFFB0186F)),
+    ),
+    BrowseCategory(
+        R.string.search_category_focus, R.string.search_category_focus_query, "browse-focus",
+        Icons.Rounded.Headphones, listOf(Color(0xFF4B6CB7), Color(0xFF1B2A55)),
+    ),
+    BrowseCategory(
+        R.string.search_category_party, R.string.search_category_party_query, "browse-party",
+        Icons.Rounded.Celebration, listOf(Color(0xFF9B1FE8), Color(0xFF2A7FE0)),
+    ),
+    BrowseCategory(
+        R.string.search_category_indie, R.string.search_category_indie_query, "browse-indie",
+        Icons.Rounded.Album, listOf(Color(0xFF0F8F80), Color(0xFF1E4F6A)),
+    ),
 )
 
 @Composable
@@ -100,6 +135,7 @@ fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val browseArt by viewModel.browseArt.collectAsStateWithLifecycle()
     val actions = LocalSongActions.current
     val keyboard = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
@@ -109,10 +145,17 @@ fun SearchScreen(
         if (state.query.isEmpty()) focusRequester.requestFocus()
     }
     if (state.mode == SearchMode.Results) LoadMoreEffect(listState, viewModel::onLoadMore)
+    // Browse artwork comes from cached results only (no quota); refreshed whenever Browse shows.
+    val browseQueries = browseCategories.map { stringResource(it.query) }
+    val showingBrowse = state.mode == SearchMode.Recent
+    LaunchedEffect(showingBrowse) {
+        if (showingBrowse) viewModel.loadBrowseArt(browseQueries)
+    }
 
     SearchContent(
         state = state,
         contentPadding = contentPadding,
+        browseArt = browseArt,
         listState = listState,
         fieldModifier = Modifier.focusRequester(focusRequester),
         callbacks = SearchCallbacks(
@@ -157,6 +200,7 @@ internal fun SearchContent(
     state: SearchUiState,
     contentPadding: PaddingValues,
     callbacks: SearchCallbacks,
+    browseArt: Map<String, String> = emptyMap(),
     listState: LazyListState = rememberLazyListState(),
     fieldModifier: Modifier = Modifier,
 ) {
@@ -207,7 +251,7 @@ internal fun SearchContent(
             when (state.mode) {
                 SearchMode.Recent -> {
                     recentSearches(state.recentSearches, callbacks)
-                    browse(callbacks.onSubmit)
+                    browse(browseArt, callbacks.onSubmit)
                 }
                 SearchMode.Typing -> {
                     suggestionRows(state.query, state.suggestions, callbacks.onSubmit)
@@ -263,7 +307,7 @@ private fun LazyListScope.recentSearches(recents: List<String>, callbacks: Searc
     }
 }
 
-private fun LazyListScope.browse(onSubmit: (String) -> Unit) {
+private fun LazyListScope.browse(art: Map<String, String>, onSubmit: (String) -> Unit) {
     item(key = "browseHeader") {
         SectionHeader(title = stringResource(R.string.search_browse), modifier = Modifier.padding(bottom = 12.dp))
     }
@@ -280,6 +324,9 @@ private fun LazyListScope.browse(onSubmit: (String) -> Unit) {
                             label = stringResource(category.label),
                             seed = category.seed,
                             onClick = { onSubmit(query) },
+                            icon = category.icon,
+                            artworkUrl = art[query],
+                            gradient = category.gradient,
                             modifier = Modifier.weight(1f),
                         )
                     }

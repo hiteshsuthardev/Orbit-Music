@@ -7,7 +7,7 @@
 A beautiful, music-first player for the songs, playlists and likes in your YouTube account,
 with Orbit AI to build a playlist for any mood in seconds.
 
-`Version 1.6.1` · Android 8.0 and newer
+`Version 1.7.0` · Android 8.0 and newer
 
 </div>
 
@@ -92,7 +92,7 @@ Pull down on the screen to refresh.
 
 - Start typing to see suggestions; the part you typed is shown in **bold**.
 - Tap a **recent search** to run it again, or **Clear** to remove them all.
-- No idea what to play? Tap a **Browse** tile: Trending, Chill, Workout, Focus, Party or Indie.
+- No idea what to play? Tap a **Browse** card: Trending, Chill, Workout, Focus, Party or Indie. Once you've opened one, its card shows the artwork of a song from it.
 - Switch between **Songs** and **Playlists** in the results.
 
 Results you've already seen open instantly, even with a weak connection.
@@ -155,13 +155,14 @@ Tell Orbit AI what you're in the mood for, in your own words:
 2. Type a request, or tap one of the suggestions.
 3. Get a playlist with a name, a short description and up to 30 songs.
 4. Tap **▶ Play**, **Shuffle**, or any single song to start from there.
+5. Like it? Tap **Add playlist to YouTube** to save it as a private playlist in your YouTube account, then **Open** to see it. The first time, Orbit Music asks for permission to manage your playlists.
 
 **Keep the conversation going.** Follow-ups like *"add 10 more"* or *"remove the slow ones"* refine your playlist.
 Explicit songs are left out unless you turn on **Explicit songs**. Tap **New chat** to start over.
 
 <br clear="right" />
 
-**Fair use.** Each account can send **20 requests every 3 hours**, and the counter above the message box shows how many you have left. After **220 requests in total**, Orbit AI shows a **Contact developer** screen so you can ask for more.
+**Fair use.** Each account can send **20 requests every 3 hours**, and the meter above the message box shows how many you have left, when the next one comes back, and how many you have in total. After **220 requests in total**, Orbit AI shows a **Contact developer** screen so you can ask for more.
 
 ---
 

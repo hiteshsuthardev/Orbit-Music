@@ -2,6 +2,11 @@ package com.example.orbitmusic.ui.screens.ai
 
 import android.content.Intent
 import android.text.format.DateFormat
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -33,10 +38,13 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.MarkEmailUnread
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,13 +55,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -68,10 +81,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.orbitmusic.BuildConfig
 import com.example.orbitmusic.R
+import com.example.orbitmusic.domain.ai.AiAllowance
 import com.example.orbitmusic.domain.ai.OrbitAiState
 import com.example.orbitmusic.domain.model.AiPlaylist
 import com.example.orbitmusic.domain.model.AiSongSuggestion
 import com.example.orbitmusic.domain.model.AppError
+import com.example.orbitmusic.domain.model.Playlist
+import com.example.orbitmusic.ui.common.ObserveAsEvents
+import com.example.orbitmusic.ui.common.messageRes
 import com.example.orbitmusic.ui.components.OrbitEmptyState
 import com.example.orbitmusic.ui.components.OrbitErrorBanner
 import com.example.orbitmusic.ui.components.ScreenHeader
@@ -79,6 +96,7 @@ import com.example.orbitmusic.ui.components.orbit.LogoStyle
 import com.example.orbitmusic.ui.components.orbit.OrbitLoader
 import com.example.orbitmusic.ui.components.orbit.OrbitLogo
 import com.example.orbitmusic.ui.theme.OrbitMusicTheme
+import com.example.orbitmusic.ui.theme.orbit.BrandColors
 import com.example.orbitmusic.ui.theme.orbit.IconButtonStyle
 import com.example.orbitmusic.ui.theme.orbit.OrbitChip
 import com.example.orbitmusic.ui.theme.orbit.OrbitDimens
@@ -87,7 +105,9 @@ import com.example.orbitmusic.ui.theme.orbit.OrbitPlayButton
 import com.example.orbitmusic.ui.theme.orbit.OrbitPreviews
 import com.example.orbitmusic.ui.theme.orbit.OrbitShapes
 import com.example.orbitmusic.ui.theme.orbit.OrbitSurface
+import com.example.orbitmusic.ui.theme.orbit.OrbitTextButton
 import com.example.orbitmusic.ui.theme.orbit.OrbitTheme
+import com.example.orbitmusic.ui.theme.orbit.OrbitTonalButton
 import java.util.Date
 
 private val suggestions = listOf(
@@ -101,10 +121,21 @@ private val suggestions = listOf(
 @Composable
 fun OrbitAiScreen(
     contentPadding: PaddingValues,
+    onOpenPlaylist: (Playlist) -> Unit,
     viewModel: OrbitAiViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val consentLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult(),
+    ) { result -> viewModel.onConsentResult(result.resultCode, result.data) }
+    ObserveAsEvents(viewModel.events) { event ->
+        when (event) {
+            is OrbitAiEvent.LaunchConsent -> consentLauncher.launch(
+                IntentSenderRequest.Builder(event.pendingIntent.intentSender).build(),
+            )
+        }
+    }
     val contactEmail = BuildConfig.DEVELOPER_CONTACT_EMAIL
     val contactSubject = stringResource(R.string.ai_limit_email_subject)
     OrbitAiContent(
@@ -119,6 +150,8 @@ fun OrbitAiScreen(
             onPlay = { answer, index -> viewModel.play(answer, startIndex = index) },
             onShuffle = { answer -> viewModel.play(answer, shuffle = true) },
             onDismissPlaybackError = viewModel::dismissPlaybackError,
+            onSaveToYouTube = viewModel::saveToYouTube,
+            onOpenPlaylist = onOpenPlaylist,
             onContactDeveloper = {
                 val email = Intent(Intent.ACTION_SENDTO, "mailto:".toUri()).apply {
                     putExtra(Intent.EXTRA_EMAIL, arrayOf(contactEmail))
@@ -138,6 +171,8 @@ internal class OrbitAiCallbacks(
     val onPlay: (AiChatEntry.Answer, Int) -> Unit,
     val onShuffle: (AiChatEntry.Answer) -> Unit,
     val onDismissPlaybackError: () -> Unit,
+    val onSaveToYouTube: (AiChatEntry.Answer, String) -> Unit,
+    val onOpenPlaylist: (Playlist) -> Unit,
     val onContactDeveloper: () -> Unit,
 )
 
@@ -218,6 +253,9 @@ internal fun OrbitAiContent(
                                 isStarting = state.startingAnswerId == entry.id,
                                 onPlay = { index -> callbacks.onPlay(entry, index) },
                                 onShuffle = { callbacks.onShuffle(entry) },
+                                save = state.saves[entry.id],
+                                onSave = { fallbackName -> callbacks.onSaveToYouTube(entry, fallbackName) },
+                                onOpenPlaylist = callbacks.onOpenPlaylist,
                             )
                         }
                     }
@@ -245,18 +283,92 @@ internal fun OrbitAiContent(
         if (allowance?.isWindowExhausted == true) {
             WindowLimitNotice(windowLimit = allowance.windowLimit, nextRequestAt = allowance.nextRequestAt)
         } else {
-            allowance?.let {
-                Text(
-                    text = stringResource(R.string.ai_requests_left, it.remainingInWindow, it.windowLimit),
-                    style = OrbitTheme.type.tabLabel,
-                    color = colors.textSecondary,
-                    modifier = Modifier.padding(horizontal = OrbitDimens.ScreenPadding + 4.dp),
-                )
-            }
+            allowance?.let { UsageMeter(it) }
             PromptInput(enabled = !state.isWorking, onSend = callbacks.onSend)
         }
     }
 }
+
+/**
+ * How many Orbit AI requests are left: a ring for the 3-hour allowance (brand gradient,
+ * amber when few are left), when the next one comes back, and the all-time total.
+ */
+@Composable
+private fun UsageMeter(allowance: AiAllowance) {
+    val context = LocalContext.current
+    val colors = OrbitTheme.colors
+    val left = allowance.remainingInWindow
+    val fraction = left.toFloat() / allowance.windowLimit
+    val animated by animateFloatAsState(fraction, label = "aiUsage")
+    val ringBrush = if (left <= LOW_REQUESTS) SolidColor(BrandColors.Amber) else BrandColors.Gradient
+    val track = colors.divider
+    val refill = allowance.nextRefillAt?.let { DateFormat.getTimeFormat(context).format(Date(it)) }
+    val description = stringResource(
+        R.string.ai_usage_description,
+        left,
+        allowance.windowLimit,
+        allowance.totalRemaining,
+        allowance.totalLimit,
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = OrbitDimens.ScreenPadding)
+            .padding(top = 6.dp)
+            .clip(OrbitShapes.GroupedList)
+            .background(colors.surface)
+            .clearAndSetSemantics { contentDescription = description }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(38.dp), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.fillMaxSize()) {
+                val stroke = 4.dp.toPx()
+                val inset = stroke / 2
+                val arcSize = Size(size.width - stroke, size.height - stroke)
+                drawArc(track, 0f, 360f, false, Offset(inset, inset), arcSize, style = Stroke(stroke))
+                drawArc(
+                    brush = ringBrush,
+                    startAngle = -90f,
+                    sweepAngle = 360f * animated,
+                    useCenter = false,
+                    topLeft = Offset(inset, inset),
+                    size = arcSize,
+                    style = Stroke(stroke, cap = StrokeCap.Round),
+                )
+            }
+            Text(left.toString(), style = OrbitTheme.type.smallLabel, color = colors.textPrimary)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                stringResource(R.string.ai_usage_left, left, allowance.windowLimit),
+                style = OrbitTheme.type.smallLabel,
+                color = colors.textPrimary,
+            )
+            Text(
+                text = if (refill != null) {
+                    stringResource(R.string.ai_usage_next_back, refill)
+                } else {
+                    stringResource(R.string.ai_usage_every_window)
+                },
+                style = OrbitTheme.type.tabLabel,
+                color = colors.textSecondary,
+            )
+        }
+        Text(
+            stringResource(R.string.ai_usage_total, allowance.totalRemaining, allowance.totalLimit),
+            style = OrbitTheme.type.tabLabel,
+            color = colors.textSecondary,
+            modifier = Modifier
+                .clip(OrbitShapes.Pill)
+                .background(colors.surfaceRaised)
+                .padding(horizontal = 10.dp, vertical = 5.dp),
+        )
+    }
+}
+
+private const val LOW_REQUESTS = 3
 
 /** Shown instead of the input while the 3-hour request limit is used up. */
 @Composable
@@ -396,8 +508,12 @@ private fun AnswerCard(
     isStarting: Boolean,
     onPlay: (Int) -> Unit,
     onShuffle: () -> Unit,
+    save: YouTubeSave?,
+    onSave: (fallbackName: String) -> Unit,
+    onOpenPlaylist: (Playlist) -> Unit,
 ) {
     val colors = OrbitTheme.colors
+    val fallbackName = stringResource(R.string.ai_default_playlist_name)
     OrbitSurface(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(vertical = 14.dp)) {
             Row(
@@ -406,7 +522,7 @@ private fun AnswerCard(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = playlist.name.ifBlank { stringResource(R.string.ai_default_playlist_name) },
+                        text = playlist.name.ifBlank { fallbackName },
                         style = OrbitTheme.type.sectionTitle,
                         color = colors.textPrimary,
                         modifier = Modifier.semantics { heading() },
@@ -434,6 +550,12 @@ private fun AnswerCard(
                     OrbitPlayButton(isPlaying = false, onClick = { onPlay(0) }, size = 52.dp)
                 }
             }
+            SaveToYouTubeRow(
+                save = save,
+                onSave = { onSave(fallbackName) },
+                onOpenPlaylist = onOpenPlaylist,
+                modifier = Modifier.padding(horizontal = 16.dp).padding(top = 12.dp),
+            )
             Spacer(Modifier.height(8.dp))
             playlist.songs.forEachIndexed { index, song ->
                 SuggestionRow(index = index, song = song, enabled = !isStarting, onClick = { onPlay(index) })
@@ -444,6 +566,93 @@ private fun AnswerCard(
                 color = colors.textSecondary,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
             )
+        }
+    }
+}
+
+/** "Add playlist to YouTube", then its progress, the result (with Open) or the error. */
+@Composable
+private fun SaveToYouTubeRow(
+    save: YouTubeSave?,
+    onSave: () -> Unit,
+    onOpenPlaylist: (Playlist) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = OrbitTheme.colors
+    Box(modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
+        when (save) {
+            null -> OrbitTonalButton(
+                text = stringResource(R.string.ai_save_to_youtube),
+                onClick = onSave,
+                leadingIcon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                modifier = Modifier.fillMaxWidth().height(46.dp),
+            )
+            is YouTubeSave.Saving -> Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OrbitLoader(size = 24.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        stringResource(R.string.ai_save_progress, save.done, save.total),
+                        style = OrbitTheme.type.smallLabel,
+                        color = colors.textSecondary,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                val progress by animateFloatAsState(
+                    if (save.total == 0) 0f else save.done.toFloat() / save.total,
+                    label = "saveProgress",
+                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(OrbitShapes.Pill)
+                        .background(colors.divider),
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth(progress)
+                            .height(4.dp)
+                            .clip(OrbitShapes.Pill)
+                            .background(BrandColors.Gradient),
+                    )
+                }
+            }
+            is YouTubeSave.Saved -> Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Rounded.CheckCircle,
+                    contentDescription = null,
+                    tint = colors.accentText,
+                    modifier = Modifier.size(24.dp),
+                )
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        pluralStringResource(R.plurals.ai_saved, save.added, save.added),
+                        style = OrbitTheme.type.smallLabel,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = if (save.missing > 0) {
+                            pluralStringResource(R.plurals.ai_saved_missing, save.missing, save.missing)
+                        } else {
+                            stringResource(R.string.ai_saved_private)
+                        },
+                        style = OrbitTheme.type.tabLabel,
+                        color = colors.textSecondary,
+                    )
+                }
+                OrbitTextButton(text = stringResource(R.string.ai_save_open), onClick = { onOpenPlaylist(save.playlist) })
+            }
+            is YouTubeSave.Failed -> Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(save.error.messageRes()),
+                    style = OrbitTheme.type.tabLabel,
+                    color = colors.textSecondary,
+                    modifier = Modifier.weight(1f),
+                )
+                OrbitTextButton(text = stringResource(R.string.ai_save_retry), onClick = onSave)
+            }
         }
     }
 }
@@ -528,7 +737,7 @@ private fun PromptInput(enabled: Boolean, onSend: (String) -> Unit) {
 
 private const val MAX_PROMPT_LENGTH = 300
 
-internal val noAiCallbacks = OrbitAiCallbacks({}, {}, {}, {}, { _, _ -> }, {}, {}, {})
+internal val noAiCallbacks = OrbitAiCallbacks({}, {}, {}, {}, { _, _ -> }, {}, {}, { _, _ -> }, {}, {})
 
 @OrbitPreviews
 @Composable

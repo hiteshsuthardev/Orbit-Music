@@ -56,7 +56,7 @@ data class UpdateUiState(
 
 /**
  * Self-hosted updates (no Google Play), shared by the whole app (activity-scoped):
- * checks version.json on start and resume (at most every 6 hours, failures ignored) or when
+ * checks version.json on start and resume (at most every 15 minutes, failures ignored) or when
  * asked from Profile, shows the optional dialog or the blocking screen, downloads and verifies
  * the APK, and opens the system installer. Remote config is refreshed alongside.
  */

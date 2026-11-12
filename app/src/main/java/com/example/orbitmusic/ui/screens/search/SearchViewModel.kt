@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -86,6 +87,11 @@ class SearchViewModel @Inject constructor(
     private val loadingMore = MutableStateFlow(false)
     private val error = MutableStateFlow<AppError?>(null)
     private var searchJob: Job? = null
+
+    private val _browseArt = MutableStateFlow<Map<String, String>>(emptyMap())
+
+    /** Browse query -> artwork of its top cached song (missing until that search ran once). */
+    val browseArt: StateFlow<Map<String, String>> = _browseArt.asStateFlow()
 
     private val typingPreview: Flow<TypingPreview> = combine(query, filter) { q, f -> q.trim() to SearchFilter.valueOf(f) }
         .debounce(DEBOUNCE_MILLIS)
@@ -171,6 +177,17 @@ class SearchViewModel @Inject constructor(
                 Resource.Loading -> Unit
             }
             loadingMore.value = false
+        }
+    }
+
+    /** Reads artwork for the Browse tiles from cached results only (never calls the API). */
+    fun loadBrowseArt(queries: List<String>) {
+        viewModelScope.launch {
+            _browseArt.value = queries.mapNotNull { q ->
+                cachedResults(q, SearchFilter.Songs)?.songs
+                    ?.firstNotNullOfOrNull { song -> song.thumbnailUrl?.takeIf { it.isNotBlank() } }
+                    ?.let { q to it }
+            }.toMap()
         }
     }
 

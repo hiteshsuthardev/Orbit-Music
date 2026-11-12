@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,7 +30,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -283,38 +288,81 @@ fun QuickPickTile(
     onLongClick = onMoreClick,
 )
 
-/** 96dp category tile: mesh gradient, dark scrim, bold white label bottom-left. */
+/**
+ * Browse / category tile: a gradient card with a bold white label top-left and, tilted in
+ * the bottom-right corner, the category's [artworkUrl] (e.g. a song from its cached results)
+ * or, without one, a frosted [icon] badge. [gradient] picks the colours; without it a mesh
+ * gradient is generated from [seed].
+ */
 @Composable
 fun CategoryTile(
     label: String,
     seed: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    artworkUrl: String? = null,
+    gradient: List<Color>? = null,
 ) {
     val source = remember { MutableInteractionSource() }
     val scale = rememberPressScale(source)
+    val background = if (gradient != null) {
+        Modifier.background(Brush.linearGradient(gradient))
+    } else {
+        Modifier.meshGradient(
+            base = BrandColors.supportingFor(seed, 0),
+            blobs = listOf(BrandColors.supportingFor(seed, 1), BrandColors.supportingFor(seed, 2)),
+            seed = seed.hashCode(),
+        )
+    }
     Box(
         modifier = modifier
-            .height(96.dp)
+            .height(CategoryTileHeight)
             .scaled { scale.value }
             .clip(OrbitShapes.CategoryTile)
-            .meshGradient(
-                base = BrandColors.supportingFor(seed, 0),
-                blobs = listOf(BrandColors.supportingFor(seed, 1), BrandColors.supportingFor(seed, 2)),
-                seed = seed.hashCode(),
-            )
-            .background(
-                Brush.verticalGradient(
-                    listOf(OnColor.Scrim.copy(alpha = 0f), OnColor.Scrim.copy(alpha = 0.55f)),
-                ),
-            )
-            .combinedClickable(interactionSource = source, indication = null, role = Role.Button, onClick = onClick)
-            .padding(12.dp),
-        contentAlignment = Alignment.BottomStart,
+            .then(background)
+            .combinedClickable(interactionSource = source, indication = null, role = Role.Button, onClick = onClick),
     ) {
-        Text(label, style = OrbitTheme.type.sectionTitle, color = OnColor.Primary, maxLines = 1)
+        val tilt = Modifier
+            .align(Alignment.BottomEnd)
+            .offset(x = 14.dp, y = 10.dp)
+            .graphicsLayer { rotationZ = CategoryArtTilt }
+        when {
+            !artworkUrl.isNullOrBlank() -> OrbitArtwork(
+                url = artworkUrl,
+                contentDescription = null,
+                shape = OrbitShapes.QuickPickTile,
+                placeholderKey = seed,
+                modifier = tilt
+                    .size(CategoryArtSize)
+                    .shadow(10.dp, OrbitShapes.QuickPickTile),
+            )
+            icon != null -> Box(
+                modifier = tilt
+                    .size(CategoryArtSize)
+                    .clip(OrbitShapes.Artwork)
+                    .background(OnColor.ChipFill),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = OnColor.Primary, modifier = Modifier.size(40.dp))
+            }
+        }
+        Text(
+            text = label,
+            style = OrbitTheme.type.sectionTitle,
+            color = OnColor.Primary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 14.dp, top = 12.dp, end = CategoryArtSize - 8.dp),
+        )
     }
 }
+
+private val CategoryTileHeight = 104.dp
+private val CategoryArtSize = 74.dp
+private const val CategoryArtTilt = 22f
 
 internal val previewSong = Song(
     videoId = "preview",
