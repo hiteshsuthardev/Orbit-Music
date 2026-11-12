@@ -77,12 +77,15 @@ android {
             buildConfigField("String", "GROQ_API_KEY", "\"${secret("GROQ_API_KEY")}\"")
             buildConfigField("String", "AI_ENDPOINT", "\"https://api.groq.com/openai/v1/chat/completions\"")
             buildConfigField("boolean", "AI_SENDS_API_KEY", "true")
+            buildConfigField("String", "AI_PROXY_TOKEN", "\"\"")
         }
         release {
             // Release never contains the Groq key: it calls the proxy, which holds it server-side.
             buildConfigField("String", "GROQ_API_KEY", "\"\"")
             buildConfigField("String", "AI_ENDPOINT", "\"${secret("AI_PROXY_URL")}\"")
             buildConfigField("boolean", "AI_SENDS_API_KEY", "false")
+            // Not a real secret (it ships in the APK): it only keeps casual callers off the proxy.
+            buildConfigField("String", "AI_PROXY_TOKEN", "\"${secret("AI_PROXY_TOKEN")}\"")
             if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(

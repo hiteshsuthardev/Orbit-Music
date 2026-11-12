@@ -7,7 +7,7 @@
 A beautiful, music-first player for the songs, playlists and likes in your YouTube account,
 with Orbit AI to build a playlist for any mood in seconds.
 
-`Version 1.6.0` · Android 8.0 and newer
+`Version 1.6.1` · Android 8.0 and newer
 
 </div>
 

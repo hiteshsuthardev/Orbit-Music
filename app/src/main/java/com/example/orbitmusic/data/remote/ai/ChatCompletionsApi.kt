@@ -27,6 +27,8 @@ data class AiConfig(
     val model: String,
     /** True when the app itself must send the key (debug, calling Groq directly). */
     val sendsApiKey: Boolean,
+    /** Release only: sent as X-Orbit-Token so the proxy only answers Orbit Music. */
+    val proxyToken: String = "",
 ) {
     val isConfigured: Boolean
         get() = endpoint.isNotBlank() && model.isNotBlank() && (!sendsApiKey || apiKey.isNotBlank())

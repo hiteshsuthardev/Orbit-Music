@@ -39,9 +39,16 @@ Console → *APIs & Services → Credentials*, add another **Android** OAuth cli
 `keytool -list -v -keystore keystore/orbit-music-release.jks -alias orbit-music`.)
 
 ### 3. Orbit AI in release builds
-Release builds never contain the Groq key. Set `AI_PROXY_URL` in `local.properties` to your
-proxy's chat-completions endpoint (it should add the key server-side and count requests per
-user). Without it, Orbit AI shows "not set up" in release builds.
+Release builds never contain the Groq key. They call a Cloudflare Worker (`proxy/orbit-ai-worker.js`,
+deployed as `orbit-ai`) that adds the key and forwards the request to Groq.
+
+- `local.properties`: `AI_PROXY_URL` = the worker's `.workers.dev` link, `AI_PROXY_TOKEN` = the app token.
+- Cloudflare → `orbit-ai` → Settings → Variables and Secrets: `GROQ_API_KEY` (Groq key) and
+  `ORBIT_APP_TOKEN` (same value as `AI_PROXY_TOKEN`).
+- To change the worker code, paste the file again in Cloudflare → *Edit code* → *Deploy*.
+
+The token ships inside the APK, so it only keeps casual callers out; per-user limits are in the app.
+Without `AI_PROXY_URL`, Orbit AI shows "not set up" in release builds.
 
 ### 4. Moving from a debug install
 A release APK can't update an app installed from a **debug** APK (different signing keys).

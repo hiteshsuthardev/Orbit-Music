@@ -92,6 +92,7 @@ object NetworkModule {
         apiKey = BuildConfig.GROQ_API_KEY,
         model = BuildConfig.GROQ_MODEL,
         sendsApiKey = BuildConfig.AI_SENDS_API_KEY,
+        proxyToken = BuildConfig.AI_PROXY_TOKEN,
     )
 
     /**
@@ -116,6 +117,7 @@ object NetworkModule {
                 if (config.sendsApiKey && config.apiKey.isNotBlank()) {
                     request.header("Authorization", "Bearer ${config.apiKey}")
                 }
+                if (config.proxyToken.isNotBlank()) request.header("X-Orbit-Token", config.proxyToken)
                 chain.proceed(request.build())
             }
             .apply { extraInterceptors.forEach(::addInterceptor) }
