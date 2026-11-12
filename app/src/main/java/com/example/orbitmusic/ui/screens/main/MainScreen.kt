@@ -2,6 +2,7 @@ package com.example.orbitmusic.ui.screens.main
 
 import dev.chrisbanes.haze.rememberHazeState
 import dev.chrisbanes.haze.hazeSource
+import com.example.orbitmusic.ui.theme.orbit.OrbitBottomBarCenterRaise
 import com.example.orbitmusic.ui.theme.orbit.OrbitBottomBarHeight
 import com.example.orbitmusic.ui.theme.orbit.OrbitBottomBar
 import com.example.orbitmusic.ui.theme.orbit.OrbitShapes
@@ -59,6 +60,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -73,6 +75,10 @@ import com.example.orbitmusic.ui.navigation.HomeRoute
 import com.example.orbitmusic.ui.navigation.LibraryRoute
 import com.example.orbitmusic.ui.navigation.PlaylistDetailRoute
 import com.example.orbitmusic.ui.navigation.SearchRoute
+import com.example.orbitmusic.ui.components.ProfileTabIcon
+import com.example.orbitmusic.ui.screens.ai.OrbitAiScreen
+import com.example.orbitmusic.ui.theme.orbit.OrbitBottomBarCenter
+import com.example.orbitmusic.ui.navigation.OrbitAiRoute
 import com.example.orbitmusic.ui.navigation.SettingsRoute
 import com.example.orbitmusic.ui.screens.home.HomeScreen
 import com.example.orbitmusic.ui.screens.library.LibraryScreen
@@ -86,6 +92,9 @@ import com.example.orbitmusic.ui.screens.songactions.SongActionsViewModel
 /** Tab order matches [rememberOrbitBottomBarItems]. */
 private val tabRoutes: List<Any> = listOf(HomeRoute, SearchRoute, LibraryRoute, SettingsRoute)
 
+/** selectedIndex value while the centre Orbit AI button is the current destination. */
+private const val ORBIT_AI_SELECTED = -1
+
 /** Bar content + its 1dp top divider (the navigation-bar inset is added separately). */
 private val BottomBarHeight = OrbitBottomBarHeight + 1.dp
 
@@ -95,7 +104,7 @@ private val BottomBarHeight = OrbitBottomBarHeight + 1.dp
  * player directly above the bar.
  */
 @Composable
-fun MainScreen(onOpenDesignSystem: () -> Unit) {
+fun MainScreen() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val songActionsViewModel: SongActionsViewModel = hiltViewModel()
@@ -106,7 +115,11 @@ fun MainScreen(onOpenDesignSystem: () -> Unit) {
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(backStackEntry) {
         val destination = backStackEntry?.destination ?: return@LaunchedEffect
-        tabRoutes.indexOfFirst { destination.hasRoute(it::class) }.takeIf { it >= 0 }?.let { selectedIndex = it }
+        if (destination.hasRoute(OrbitAiRoute::class)) {
+            selectedIndex = ORBIT_AI_SELECTED
+        } else {
+            tabRoutes.indexOfFirst { destination.hasRoute(it::class) }.takeIf { it >= 0 }?.let { selectedIndex = it }
+        }
     }
 
     val playerViewModel: PlayerViewModel = hiltViewModel()
@@ -194,13 +207,14 @@ fun MainScreen(onOpenDesignSystem: () -> Unit) {
                 composable<HomeRoute> {
                     HomeScreen(
                         contentPadding = contentPadding,
-                        onOpenAccount = { navController.navigateToTab(SettingsRoute) },
                         onOpenPlaylist = openPlaylist,
                         onOpenLiked = { openLibraryTab(LibraryTab.Liked) },
                         onSeeAllPlaylists = { openLibraryTab(LibraryTab.Playlists) },
                     )
                 }
-                composable<SearchRoute> { SearchScreen(contentPadding = contentPadding, onOpenPlaylist = openPlaylist) }
+                composable<SearchRoute> {
+                    SearchScreen(contentPadding = contentPadding, onOpenPlaylist = openPlaylist)
+                }
                 composable<LibraryRoute> {
                     LibraryScreen(
                         contentPadding = contentPadding,
@@ -209,8 +223,9 @@ fun MainScreen(onOpenDesignSystem: () -> Unit) {
                         onTabRequestConsumed = { libraryTabRequest = null },
                     )
                 }
+                composable<OrbitAiRoute> { OrbitAiScreen(contentPadding = contentPadding) }
                 composable<SettingsRoute> {
-                    SettingsScreen(contentPadding = contentPadding, onOpenDesignSystem = onOpenDesignSystem)
+                    SettingsScreen(contentPadding = contentPadding)
                 }
                 composable<PlaylistDetailRoute> {
                     PlaylistDetailScreen(contentPadding = contentPadding, onBack = { navController.popBackStack() })
@@ -220,7 +235,8 @@ fun MainScreen(onOpenDesignSystem: () -> Unit) {
             Column(modifier = Modifier.align(Alignment.BottomCenter)) {
                 SnackbarHost(
                     snackbarHostState,
-                    Modifier.padding(start = 8.dp, end = 8.dp, bottom = miniPlayerSpace),
+                    // Above the mini player, or at least above the raised Orbit AI button.
+                    Modifier.padding(start = 8.dp, end = 8.dp, bottom = maxOf(miniPlayerSpace, OrbitBottomBarCenterRaise)),
                 ) { data ->
                     Snackbar(
                         snackbarData = data,
@@ -232,12 +248,20 @@ fun MainScreen(onOpenDesignSystem: () -> Unit) {
                 }
                 OrbitBottomBar(
                     hazeState = hazeState,
-                    items = rememberOrbitBottomBarItems(),
+                    items = rememberOrbitBottomBarItems(profileContent = { selected -> ProfileTabIcon(selected) }),
                     selectedIndex = selectedIndex,
                     onItemSelected = { index ->
                         selectedIndex = index
                         navController.navigateToTab(tabRoutes[index])
                     },
+                    center = OrbitBottomBarCenter(
+                        label = stringResource(R.string.nav_orbit_ai),
+                        selected = selectedIndex == ORBIT_AI_SELECTED,
+                        onClick = {
+                            selectedIndex = ORBIT_AI_SELECTED
+                            navController.navigateToTab(OrbitAiRoute)
+                        },
+                    ),
                 )
             }
 
@@ -269,7 +293,8 @@ fun MainScreen(onOpenDesignSystem: () -> Unit) {
 }
 
 /** Gap between the mini player and the bottom bar. */
-private val MiniPlayerGap = 8.dp
+/** The mini player floats above the bar's raised Orbit AI button, with an 8dp gap. */
+private val MiniPlayerGap = OrbitBottomBarCenterRaise + 8.dp
 
 @Composable
 private fun PlayerSheets(

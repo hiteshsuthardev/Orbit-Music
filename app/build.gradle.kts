@@ -32,17 +32,36 @@ android {
         applicationId = "com.example.orbitmusic"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        // Versioning (every update): versionName is MAJOR.MINOR.PATCH.
+        // - PATCH (1.1.0 -> 1.1.1): bug fixes only.
+        // - MINOR (1.1.x -> 1.2.0): new features or smaller changes, nothing breaking.
+        // - MAJOR (1.x -> 2.0.0): big redesigns or breaking changes.
+        // versionCode goes up by 1 on every update, whatever the type.
+        versionCode = 7
+        versionName = "1.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${secret("GOOGLE_WEB_CLIENT_ID")}\"")
         buildConfigField("String", "YOUTUBE_API_KEY", "\"${secret("YOUTUBE_API_KEY")}\"")
+        // Shown on the "Orbit AI limit reached" screen; blank hides the email button.
+        buildConfigField("String", "DEVELOPER_CONTACT_EMAIL", "\"${secret("DEVELOPER_CONTACT_EMAIL")}\"")
+        // Orbit AI (Groq). The model name is not secret.
+        buildConfigField("String", "GROQ_MODEL", "\"${secret("GROQ_MODEL")}\"")
     }
 
     buildTypes {
+        debug {
+            // Debug calls Groq directly with the key from local.properties.
+            buildConfigField("String", "GROQ_API_KEY", "\"${secret("GROQ_API_KEY")}\"")
+            buildConfigField("String", "AI_ENDPOINT", "\"https://api.groq.com/openai/v1/chat/completions\"")
+            buildConfigField("boolean", "AI_SENDS_API_KEY", "true")
+        }
         release {
+            // Release never contains the Groq key: it calls the proxy, which holds it server-side.
+            buildConfigField("String", "GROQ_API_KEY", "\"\"")
+            buildConfigField("String", "AI_ENDPOINT", "\"${secret("AI_PROXY_URL")}\"")
+            buildConfigField("boolean", "AI_SENDS_API_KEY", "false")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

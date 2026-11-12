@@ -47,6 +47,12 @@ import com.example.orbitmusic.ui.screens.search.SearchContent
 import com.example.orbitmusic.ui.screens.search.SearchMode
 import com.example.orbitmusic.ui.screens.search.SearchUiState
 import com.example.orbitmusic.ui.screens.splash.SplashScreen
+import com.example.orbitmusic.ui.screens.ai.AiChatEntry
+import com.example.orbitmusic.ui.screens.ai.OrbitAiContent
+import com.example.orbitmusic.ui.screens.ai.OrbitAiUiState
+import com.example.orbitmusic.ui.screens.ai.noAiCallbacks
+import com.example.orbitmusic.domain.model.AiPlaylist
+import com.example.orbitmusic.domain.model.AiSongSuggestion
 import com.example.orbitmusic.ui.theme.OrbitMusicTheme
 import org.junit.Rule
 import org.junit.Test
@@ -95,7 +101,6 @@ class ScreenRenderTest {
     }
 
     private fun homeState() = HomeUiState(
-        user = user,
         greeting = Greeting.Evening,
         sections = HomeSections(
             recentlyPlayed = songs.take(4),
@@ -112,7 +117,6 @@ class ScreenRenderTest {
         contentPadding = PaddingValues(),
         onRefresh = {},
         onDismissError = {},
-        onOpenAccount = {},
         onOpenPlaylist = {},
         onOpenLiked = {},
         onSeeAllPlaylists = {},
@@ -164,6 +168,27 @@ class ScreenRenderTest {
     @Test
     fun searchTyping() = render("search_typing_light", dark = false) {
         Search(SearchUiState(query = "lo", mode = SearchMode.Typing, suggestions = listOf("lofi beats", "lofi hip hop", "love songs")))
+    }
+
+    @Test
+    fun orbitAi() = render("orbit_ai_dark", dark = true) {
+        OrbitAiContent(
+            state = OrbitAiUiState(
+                entries = listOf(
+                    AiChatEntry.Request(0, "Songs for a late night drive"),
+                    AiChatEntry.Answer(
+                        1,
+                        AiPlaylist(
+                            name = "Late night drive",
+                            description = "Smooth synths for empty roads",
+                            songs = listOf(AiSongSuggestion("Midnight City", "M83"), AiSongSuggestion("Nightcall", "Kavinsky")),
+                        ),
+                    ),
+                ),
+            ),
+            contentPadding = PaddingValues(),
+            callbacks = noAiCallbacks,
+        )
     }
 
     @Test

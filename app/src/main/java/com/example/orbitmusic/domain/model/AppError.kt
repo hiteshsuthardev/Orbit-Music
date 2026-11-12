@@ -28,5 +28,24 @@ sealed interface AppError {
     /** The user revoked access or the grant can no longer be renewed silently. */
     data object AuthorizationRequired : AppError
 
+    // Orbit AI
+    /** No AI endpoint, model or (debug) API key configured. */
+    data object AiNotConfigured : AppError
+
+    /** The AI provider rejected the API key (HTTP 401). */
+    data object AiInvalidKey : AppError
+
+    /** HTTP 429. [retryAfterSeconds] comes from the Retry-After header. */
+    data class AiRateLimited(val retryAfterSeconds: Int) : AppError
+
+    /** The AI provider is down or overloaded (HTTP 5xx). */
+    data object AiUnavailable : AppError
+
+    /** No answer within the 30 second timeout. */
+    data object AiTimeout : AppError
+
+    /** The reply wasn't a usable playlist, even after asking again for valid JSON. */
+    data object AiBadResponse : AppError
+
     data class Unknown(val message: String? = null) : AppError
 }

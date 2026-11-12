@@ -1,6 +1,8 @@
 package com.example.orbitmusic.di
 
 import com.example.orbitmusic.BuildConfig
+import com.example.orbitmusic.data.remote.ai.AiConfig
+import com.example.orbitmusic.data.remote.ai.ChatCompletionsApi
 import com.example.orbitmusic.data.remote.lyrics.LrcLibApi
 import com.example.orbitmusic.data.remote.youtube.ApiKeyInterceptor
 import com.example.orbitmusic.data.remote.youtube.AuthTokenAuthenticator
@@ -60,6 +62,54 @@ object NetworkModule {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(YouTubeApi::class.java)
+
+    /** Orbit AI endpoint, model and (debug only) key, from BuildConfig. */
+    @Provides
+    @Singleton
+    fun provideAiConfig(): AiConfig = AiConfig(
+        endpoint = BuildConfig.AI_ENDPOINT,
+        apiKey = BuildConfig.GROQ_API_KEY,
+        model = BuildConfig.GROQ_MODEL,
+        sendsApiKey = BuildConfig.AI_SENDS_API_KEY,
+    )
+
+    /**
+     * Orbit AI client, separate from the YouTube one: 30s timeouts, and the Groq key (debug
+     * builds only) added as the Authorization header. Debug logging comes from
+     * [BuildTypeInterceptors], which redacts the Authorization header and never logs bodies.
+     */
+    @Provides
+    @Singleton
+    fun provideChatCompletionsApi(
+        config: AiConfig,
+        json: Json,
+        @BuildTypeInterceptors extraInterceptors: Set<@JvmSuppressWildcards Interceptor>,
+    ): ChatCompletionsApi {
+        val client = OkHttpClient.Builder()
+            .connectTimeout(AI_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(AI_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(AI_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .callTimeout(AI_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                if (config.sendsApiKey && config.apiKey.isNotBlank()) {
+                    request.header("Authorization", "Bearer ${config.apiKey}")
+                }
+                chain.proceed(request.build())
+            }
+            .apply { extraInterceptors.forEach(::addInterceptor) }
+            .build()
+        return Retrofit.Builder()
+            // Every call passes its full endpoint (@Url); this base is only required by Retrofit.
+            .baseUrl(AI_PLACEHOLDER_BASE_URL)
+            .client(client)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create(ChatCompletionsApi::class.java)
+    }
+
+    private const val AI_TIMEOUT_SECONDS = 30L
+    private const val AI_PLACEHOLDER_BASE_URL = "https://api.groq.com/"
 
     /**
      * Lyrics come from LRCLIB over a separate client: it never sees the YouTube API key or

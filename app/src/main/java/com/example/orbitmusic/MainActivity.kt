@@ -31,8 +31,9 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // The system splash (plum + white logo) hands straight over to the identical Compose
-        // splash, which stays while preferences and the encrypted session load.
+        // Android's own splash (plum + white logo) hands over to the Compose splash, whose first
+        // frame is identical, so only one splash is ever seen; it then animates while
+        // preferences and the encrypted session load.
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -64,8 +65,6 @@ class MainActivity : ComponentActivity() {
                         OrbitApp(
                             startDestination = state.startDestination,
                             authState = state.authState,
-                            isDarkTheme = dark,
-                            onDarkThemeChange = viewModel::onDarkThemeChange,
                         )
                     } else {
                         SplashScreen()
@@ -76,6 +75,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private companion object {
-        const val SPLASH_MIN_MILLIS = 900L
+        /** Long enough for the splash animation (logo, orbit ring, name) to finish. */
+        const val SPLASH_MIN_MILLIS = 1_600L
     }
 }

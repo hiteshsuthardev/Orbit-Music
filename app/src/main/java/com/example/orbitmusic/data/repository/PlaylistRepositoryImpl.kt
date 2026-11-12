@@ -34,6 +34,7 @@ import com.example.orbitmusic.util.TimeProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -68,9 +69,15 @@ class PlaylistRepositoryImpl @Inject constructor(
                     var token: String? = null
                     var pages = 0
                     do {
-                        val page = api.myPlaylists(pageToken = token)
-                        playlists += page.items
-                        token = page.nextPageToken
+                        val page = try {
+                            api.myPlaylists(pageToken = token)
+                        } catch (e: HttpException) {
+                            // 404 (channelNotFound): the Google account has never created a
+                            // YouTube channel, so it simply has no playlists. Not an error.
+                            if (e.code() == HTTP_NOT_FOUND) null else throw e
+                        }
+                        playlists += page?.items.orEmpty()
+                        token = page?.nextPageToken
                         pages++
                     } while (token != null && pages < CachePolicy.MAX_PAGES)
 
@@ -276,3 +283,5 @@ class PlaylistRepositoryImpl @Inject constructor(
         )
     }
 }
+
+private const val HTTP_NOT_FOUND = 404

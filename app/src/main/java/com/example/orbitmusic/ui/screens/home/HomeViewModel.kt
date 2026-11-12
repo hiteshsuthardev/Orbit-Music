@@ -3,12 +3,9 @@ package com.example.orbitmusic.ui.screens.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.orbitmusic.domain.model.AppError
-import com.example.orbitmusic.domain.model.AuthState
 import com.example.orbitmusic.domain.model.Playlist
 import com.example.orbitmusic.domain.model.Resource
 import com.example.orbitmusic.domain.model.Song
-import com.example.orbitmusic.domain.model.UserProfile
-import com.example.orbitmusic.domain.usecase.auth.ObserveAuthStateUseCase
 import com.example.orbitmusic.domain.usecase.home.ObserveTrendingUseCase
 import com.example.orbitmusic.domain.usecase.home.RefreshHomeFeedUseCase
 import com.example.orbitmusic.domain.usecase.library.ObserveLikedSongsUseCase
@@ -66,7 +63,6 @@ fun heroFor(sections: HomeSections): HomeHero? {
 }
 
 data class HomeUiState(
-    val user: UserProfile? = null,
     val greeting: Greeting = Greeting.Morning,
     val sections: HomeSections = HomeSections(),
     val isRefreshing: Boolean = false,
@@ -81,7 +77,6 @@ data class HomeUiState(
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    observeAuthState: ObserveAuthStateUseCase,
     observeRecentlyPlayed: ObserveRecentlyPlayedUseCase,
     observeMyPlaylists: ObserveMyPlaylistsUseCase,
     observeQuickPicks: ObserveQuickPicksUseCase,
@@ -112,14 +107,12 @@ class HomeViewModel @Inject constructor(
     }
 
     val uiState: StateFlow<HomeUiState> = combine(
-        observeAuthState(),
         sections,
         refreshing,
         error,
         networkMonitor.isOnline,
-    ) { auth, content, isRefreshing, err, online ->
+    ) { content, isRefreshing, err, online ->
         HomeUiState(
-            user = (auth as? AuthState.SignedIn)?.user,
             greeting = greetingFor(timeProvider.localTime()),
             sections = content,
             isRefreshing = isRefreshing,

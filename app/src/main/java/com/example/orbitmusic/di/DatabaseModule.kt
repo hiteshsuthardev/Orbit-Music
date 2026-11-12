@@ -12,12 +12,16 @@ import com.example.orbitmusic.data.local.db.dao.PlaylistDao
 import com.example.orbitmusic.data.local.db.dao.SearchHistoryDao
 import com.example.orbitmusic.data.local.db.dao.SongDao
 import com.example.orbitmusic.data.local.db.DatabaseSessionCleaner
+import com.example.orbitmusic.data.repository.AiUsageRepositoryImpl
 import com.example.orbitmusic.data.repository.ChannelRepositoryImpl
+import com.example.orbitmusic.data.repository.GroqAiRepository
 import com.example.orbitmusic.data.repository.LyricsRepositoryImpl
 import com.example.orbitmusic.data.repository.PlaylistRepositoryImpl
 import com.example.orbitmusic.data.repository.SearchRepositoryImpl
 import com.example.orbitmusic.data.repository.SongRepositoryImpl
 import com.example.orbitmusic.data.repository.UserLibraryRepositoryImpl
+import com.example.orbitmusic.domain.repository.AiRepository
+import com.example.orbitmusic.domain.repository.AiUsageRepository
 import com.example.orbitmusic.domain.repository.ChannelRepository
 import com.example.orbitmusic.domain.repository.LyricsRepository
 import com.example.orbitmusic.domain.repository.PlaylistRepository
@@ -87,6 +91,13 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindLyricsRepository(impl: LyricsRepositoryImpl): LyricsRepository
+
+    @Binds
+    abstract fun bindAiUsageRepository(impl: AiUsageRepositoryImpl): AiUsageRepository
+
+    /** Swap the AI provider by binding another AiRepository here. */
+    @Binds
+    abstract fun bindAiRepository(impl: GroqAiRepository): AiRepository
 
     /** Sign-out wipes the whole database (cache, favorites, history, searches). */
     @Binds

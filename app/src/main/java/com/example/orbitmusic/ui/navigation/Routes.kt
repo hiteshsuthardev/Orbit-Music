@@ -14,10 +14,6 @@ data object LoginRoute
 @Serializable
 data object MainRoute
 
-/** Design-system showcase, reachable from Settings in debug builds. */
-@Serializable
-data object DesignSystemRoute
-
 // Bottom-navigation tabs ------------------------------------------------------------
 
 @Serializable
@@ -29,6 +25,11 @@ data object SearchRoute
 @Serializable
 data object LibraryRoute
 
+/** Orbit AI chat, opened from the raised centre button of the bottom bar. */
+@Serializable
+data object OrbitAiRoute
+
+/** Profile (account, appearance, storage, sign out), opened from the avatar on each tab. */
 @Serializable
 data object SettingsRoute
 

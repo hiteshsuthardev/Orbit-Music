@@ -40,9 +40,13 @@ class RefreshHomeFeedUseCase @Inject constructor(
         firstError(results)?.let { Resource.Error(it) } ?: Resource.Success(Unit)
     }
 
-    /** Prefer the most actionable error when several sources fail. */
+    /**
+     * Prefer the most actionable error when several sources fail. "Not found" is dropped:
+     * it describes a missing list on YouTube's side (e.g. an account with no channel), not
+     * something the user opened, so "no longer available" would only confuse on Home.
+     */
     private fun firstError(results: List<Resource<Unit>>): AppError? {
-        val errors = results.filterIsInstance<Resource.Error>().map { it.error }
+        val errors = results.filterIsInstance<Resource.Error>().map { it.error }.filterNot { it == AppError.NotFound }
         return errors.firstOrNull { it == AppError.AuthorizationRequired }
             ?: errors.firstOrNull { it == AppError.QuotaExceeded }
             ?: errors.firstOrNull()

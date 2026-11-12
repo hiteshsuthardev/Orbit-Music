@@ -9,7 +9,6 @@ import com.example.orbitmusic.domain.model.YouTubeAccess
 import com.example.orbitmusic.domain.usecase.auth.ObserveAuthStateUseCase
 import com.example.orbitmusic.domain.usecase.auth.RefreshAuthorizationUseCase
 import com.example.orbitmusic.domain.usecase.preferences.ObservePreferencesUseCase
-import com.example.orbitmusic.domain.usecase.preferences.SetThemeModeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -45,7 +44,6 @@ class MainViewModel @Inject constructor(
     observePreferences: ObservePreferencesUseCase,
     observeAuthState: ObserveAuthStateUseCase,
     private val refreshAuthorization: RefreshAuthorizationUseCase,
-    private val setThemeMode: SetThemeModeUseCase,
 ) : ViewModel() {
 
     private val authState = observeAuthState()
@@ -66,10 +64,5 @@ class MainViewModel @Inject constructor(
             val initial = authState.first { it !is AuthState.Loading }
             if (initial.hasYouTubeAccess()) refreshAuthorization()
         }
-    }
-
-    /** Used by the design-system screen's dark-mode switch. */
-    fun onDarkThemeChange(dark: Boolean) {
-        viewModelScope.launch { setThemeMode(if (dark) ThemeMode.Dark else ThemeMode.Light) }
     }
 }

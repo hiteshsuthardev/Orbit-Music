@@ -109,10 +109,11 @@ internal fun NowPlayingBackground(palette: ArtworkPalette, modifier: Modifier = 
  * Expanded Now Playing layout. The main area shows the chosen view:
  * - Video: [videoSlot], a large empty measured box the live YouTube player is drawn over
  *   (by the sheet, so it can morph from the mini player);
- * - Poster: the artwork, with [videoTileSlot] (a small live-video tile) in its corner;
- * - Lyrics: the lyrics, with the same small video tile.
- * YouTube requires the playing video to stay visible at 200x200 px or more, so it is
- * never hidden completely. Always on the colourful background, so it uses on-colour tokens.
+ * - Poster: the artwork only;
+ * - Lyrics: the lyrics only.
+ * In Poster and Lyrics the sheet keeps the player running, invisible, in [videoTileSlot]
+ * (kept at the player's minimum size so playback isn't interrupted). Always on the
+ * colourful background, so it uses the white on-colour tokens.
  */
 @Composable
 internal fun NowPlayingContent(
@@ -182,7 +183,6 @@ internal fun NowPlayingContent(
                         positionMs = player.positionMs,
                         onSeek = actions::seekTo,
                         onRetry = actions::retryLyrics,
-                        bottomInset = tileSize,
                         modifier = Modifier.fillMaxSize(),
                     )
                     videoTileSlot(

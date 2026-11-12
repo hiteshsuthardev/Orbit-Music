@@ -48,7 +48,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.orbitmusic.R
 import com.example.orbitmusic.domain.model.Playlist
 import com.example.orbitmusic.domain.model.Song
-import com.example.orbitmusic.domain.model.UserProfile
 import com.example.orbitmusic.ui.components.OfflineBanner
 import com.example.orbitmusic.ui.components.OrbitArtwork
 import com.example.orbitmusic.ui.components.OrbitEmptyState
@@ -62,7 +61,7 @@ import com.example.orbitmusic.ui.components.SongCard
 import com.example.orbitmusic.ui.components.SongListSkeleton
 import com.example.orbitmusic.ui.components.SongRow
 import com.example.orbitmusic.ui.components.StaggeredAppear
-import com.example.orbitmusic.ui.components.UserAvatar
+import com.example.orbitmusic.ui.components.orbit.OrbitSpin
 import com.example.orbitmusic.ui.components.previewSong
 import com.example.orbitmusic.ui.screens.songactions.LocalSongActions
 import com.example.orbitmusic.ui.theme.OrbitMusicTheme
@@ -88,7 +87,6 @@ private const val TRENDING_COUNT = 10
 @Composable
 fun HomeScreen(
     contentPadding: PaddingValues,
-    onOpenAccount: () -> Unit,
     onOpenPlaylist: (Playlist) -> Unit,
     onOpenLiked: () -> Unit,
     onSeeAllPlaylists: () -> Unit,
@@ -101,7 +99,6 @@ fun HomeScreen(
         contentPadding = contentPadding,
         onRefresh = { viewModel.refresh(force = true) },
         onDismissError = viewModel::dismissError,
-        onOpenAccount = onOpenAccount,
         onOpenPlaylist = onOpenPlaylist,
         onOpenLiked = onOpenLiked,
         onSeeAllPlaylists = onSeeAllPlaylists,
@@ -121,7 +118,6 @@ internal fun HomeContent(
     contentPadding: PaddingValues,
     onRefresh: () -> Unit,
     onDismissError: () -> Unit,
-    onOpenAccount: () -> Unit,
     onOpenPlaylist: (Playlist) -> Unit,
     onOpenLiked: () -> Unit,
     onSeeAllPlaylists: () -> Unit,
@@ -170,7 +166,7 @@ internal fun HomeContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 item(key = "header") {
-                    HomeHeader(user = state.user, greeting = state.greeting, onOpenAccount = onOpenAccount)
+                    HomeHeader(greeting = state.greeting)
                 }
                 if (state.isOffline) {
                     item(key = "offline") {
@@ -304,7 +300,7 @@ internal fun HomeContent(
 }
 
 @Composable
-private fun HomeHeader(user: UserProfile?, greeting: Greeting, onOpenAccount: () -> Unit) {
+private fun HomeHeader(greeting: Greeting) {
     ScreenHeader(
         title = stringResource(
             when (greeting) {
@@ -314,18 +310,7 @@ private fun HomeHeader(user: UserProfile?, greeting: Greeting, onOpenAccount: ()
                 Greeting.Night -> R.string.home_greeting_night
             },
         ),
-        trailing = user?.let {
-            {
-                UserAvatar(
-                    name = it.displayName ?: it.email,
-                    photoUrl = it.photoUrl,
-                    size = 40.dp,
-                    onClick = onOpenAccount,
-                    onClickLabel = stringResource(R.string.cd_open_settings),
-                    modifier = Modifier.padding(end = 8.dp),
-                )
-            }
-        },
+        trailing = { OrbitSpin(modifier = Modifier.padding(end = 8.dp)) },
     )
 }
 
@@ -460,7 +445,6 @@ private fun HomePreview() {
             contentPadding = PaddingValues(),
             onRefresh = {},
             onDismissError = {},
-            onOpenAccount = {},
             onOpenPlaylist = {},
             onOpenLiked = {},
             onSeeAllPlaylists = {},

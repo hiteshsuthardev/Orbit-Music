@@ -33,11 +33,17 @@ annotation class SessionDataStore
 @Retention(AnnotationRetention.BINARY)
 annotation class PlaybackSessionDataStore
 
+/** Orbit AI request counts per user. Kept on sign-out and included in backups. */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AiUsageDataStore
+
 /** File names are also referenced from res/xml backup rules. */
 object DataStoreFiles {
     const val USER_PREFERENCES = "user_preferences"
     const val SESSION = "secure_session"
     const val PLAYBACK_SESSION = "playback_session"
+    const val AI_USAGE = "ai_usage"
 }
 
 @Module
@@ -66,6 +72,18 @@ object DataStoreModule {
         corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
         scope = CoroutineScope(SupervisorJob() + ioDispatcher),
         produceFile = { context.preferencesDataStoreFile(DataStoreFiles.SESSION) },
+    )
+
+    @Provides
+    @Singleton
+    @AiUsageDataStore
+    fun provideAiUsageDataStore(
+        @ApplicationContext context: Context,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
+        corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+        scope = CoroutineScope(SupervisorJob() + ioDispatcher),
+        produceFile = { context.preferencesDataStoreFile(DataStoreFiles.AI_USAGE) },
     )
 
     @Provides

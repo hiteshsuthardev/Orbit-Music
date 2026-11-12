@@ -145,7 +145,8 @@ class LibraryViewModel @Inject constructor(
             val playlists = async { refreshMyPlaylists(force) }
             val liked = async { refreshLikedSongs(force) }
             val results = listOf(playlists.await(), liked.await())
-            error.value = results.filterIsInstance<Resource.Error>().firstOrNull()?.error
+            // "Not found" for a whole library list isn't actionable (see RefreshHomeFeedUseCase).
+            error.value = results.filterIsInstance<Resource.Error>().map { it.error }.firstOrNull { it != AppError.NotFound }
             refreshing.value = false
         }
     }

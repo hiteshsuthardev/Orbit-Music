@@ -62,7 +62,12 @@ class PlayerViewModel @Inject constructor(
     private val getLyrics: GetLyricsUseCase,
 ) : ViewModel() {
 
-    private val view = observePreferences().map { it.nowPlayingView }.distinctUntilChanged()
+    /** A previously saved Lyrics choice falls back to Video while lyrics are hidden. */
+    private val view = observePreferences()
+        .map { prefs ->
+            prefs.nowPlayingView.takeUnless { it == NowPlayingView.Lyrics && !LYRICS_ENABLED } ?: NowPlayingView.Video
+        }
+        .distinctUntilChanged()
 
     /** Bumped by "Try again" so the same song's lyrics are requested again. */
     private val lyricsRetry = MutableStateFlow(0)

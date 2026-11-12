@@ -18,14 +18,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.orbitmusic.domain.model.AuthState
-import com.example.orbitmusic.ui.navigation.DesignSystemRoute
 import com.example.orbitmusic.ui.navigation.LoginRoute
 import com.example.orbitmusic.ui.navigation.MainRoute
 import com.example.orbitmusic.ui.navigation.OnboardingRoute
 import com.example.orbitmusic.ui.screens.login.LoginScreen
 import com.example.orbitmusic.ui.screens.main.MainScreen
 import com.example.orbitmusic.ui.screens.onboarding.OnboardingScreen
-import com.example.orbitmusic.ui.screens.showcase.OrbitShowcaseScreen
 
 private val slideSpec = spring<IntOffset>(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow)
 
@@ -37,8 +35,6 @@ private val slideSpec = spring<IntOffset>(dampingRatio = 0.85f, stiffness = Spri
 fun OrbitApp(
     startDestination: StartDestination,
     authState: AuthState,
-    isDarkTheme: Boolean,
-    onDarkThemeChange: (Boolean) -> Unit,
 ) {
     val navController = rememberNavController()
     val start: Any = remember {
@@ -54,8 +50,7 @@ fun OrbitApp(
         val lostAccess = authState is AuthState.SignedOut ||
             (authState is AuthState.SignedIn && !authState.hasYouTubeAccess())
         val destination = navController.currentDestination
-        val insideApp = destination?.hasRoute<MainRoute>() == true ||
-            destination?.hasRoute<DesignSystemRoute>() == true
+        val insideApp = destination?.hasRoute<MainRoute>() == true
         if (lostAccess && insideApp) {
             navController.navigate(LoginRoute) {
                 popUpTo(navController.graph.id) { inclusive = true }
@@ -97,11 +92,6 @@ fun OrbitApp(
                 },
             )
         }
-        composable<MainRoute> {
-            MainScreen(onOpenDesignSystem = { navController.navigate(DesignSystemRoute) })
-        }
-        composable<DesignSystemRoute> {
-            OrbitShowcaseScreen(isDark = isDarkTheme, onDarkModeChange = onDarkThemeChange)
-        }
+        composable<MainRoute> { MainScreen() }
     }
 }

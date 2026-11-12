@@ -67,6 +67,7 @@ import com.example.orbitmusic.ui.components.ScreenHeader
 import com.example.orbitmusic.ui.components.SongListSkeleton
 import com.example.orbitmusic.ui.components.SongRow
 import com.example.orbitmusic.ui.components.orbit.OrbitLoader
+import com.example.orbitmusic.ui.components.orbit.OrbitSpin
 import com.example.orbitmusic.ui.screens.songactions.LocalSongActions
 
 private data class TabSpec(val tab: LibraryTab, @StringRes val label: Int)
@@ -141,8 +142,8 @@ fun LibraryScreen(
                     contentDescription = stringResource(R.string.create_playlist_title),
                     onClick = viewModel::onOpenCreatePlaylist,
                     style = IconButtonStyle.Tonal,
-                    modifier = Modifier.padding(end = 8.dp),
                 )
+                OrbitSpin(modifier = Modifier.padding(start = 4.dp, end = 8.dp))
             },
         )
         Row(

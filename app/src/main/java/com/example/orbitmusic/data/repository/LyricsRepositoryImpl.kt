@@ -9,6 +9,7 @@ import com.example.orbitmusic.domain.model.Resource
 import com.example.orbitmusic.domain.model.Song
 import com.example.orbitmusic.domain.repository.LyricsRepository
 import com.example.orbitmusic.util.LrcParser
+import com.example.orbitmusic.util.LyricsQueries
 import kotlinx.coroutines.CancellationException
 import java.io.IOException
 import javax.inject.Inject
@@ -16,9 +17,13 @@ import javax.inject.Singleton
 import kotlin.math.abs
 
 /**
- * Looks lyrics up on LRCLIB by title and artist and picks the best match: lyrics present,
- * length close to the video's, time-synced preferred. Results (including "none found") are
- * kept in memory per video so reopening the view doesn't repeat the request.
+ * Finds lyrics on LRCLIB. Music video titles are noisy, so it tries, in order, until a
+ * result whose track name fits the song is found:
+ * 1. exact track + artist lookup (works for clean titles / "- Topic" channels);
+ * 2. free-text search for the core song name ("Tum Hi Ho" from "Tum Hi Ho Full Song | ...");
+ * 3. free-text search for its first few words.
+ * Among fitting results it prefers time-synced lyrics with a length close to the video's.
+ * Results (including "none found") are kept in memory per video.
  */
 @Singleton
 class LyricsRepositoryImpl @Inject constructor(
@@ -33,13 +38,7 @@ class LyricsRepositoryImpl @Inject constructor(
     override suspend fun getLyrics(song: Song): Resource<Lyrics?> {
         cache.get(song.videoId)?.let { return Resource.Success(it.lyrics) }
         return try {
-            val artist = song.artist.takeIf { it.isNotBlank() }
-            var candidates = api.search(trackName = song.title, artistName = artist)
-            // Artist names parsed from video titles are sometimes off; retry by title alone.
-            if (candidates.none { it.hasLyrics() } && artist != null) {
-                candidates = api.search(trackName = song.title, artistName = null)
-            }
-            val lyrics = bestMatch(candidates, song.durationMs)?.toLyrics()
+            val lyrics = find(song)
             cache.put(song.videoId, Entry(lyrics))
             Resource.Success(lyrics)
         } catch (cancelled: CancellationException) {
@@ -51,16 +50,29 @@ class LyricsRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun bestMatch(candidates: List<LrcLibTrackDto>, durationMs: Long): LrcLibTrackDto? {
-        val withLyrics = candidates.filter { it.hasLyrics() }
-        if (withLyrics.isEmpty()) return null
-        val seconds = durationMs / 1_000.0
-        // Music videos often run longer than the audio (intros / outros), so allow slack.
-        val close = withLyrics.filter { track ->
-            durationMs <= 0 || track.duration == null || abs(track.duration - seconds) <= DURATION_TOLERANCE_S
+    private suspend fun find(song: Song): Lyrics? {
+        val attempts: List<suspend () -> List<LrcLibTrackDto>> = buildList {
+            add { api.search(trackName = song.title, artistName = song.artist.takeIf { it.isNotBlank() }) }
+            LyricsQueries.freeTextQueries(song.title).forEach { query -> add { api.searchText(query) } }
         }
-        val pool = close.ifEmpty { withLyrics }
-        return pool.firstOrNull { !it.syncedLyrics.isNullOrBlank() } ?: pool.first()
+        for (attempt in attempts) {
+            val match = bestMatch(attempt(), song)
+            if (match != null) return match.toLyrics()
+        }
+        return null
+    }
+
+    private fun bestMatch(candidates: List<LrcLibTrackDto>, song: Song): LrcLibTrackDto? {
+        val fitting = candidates.filter { it.hasLyrics() && LyricsQueries.titleMatches(it.trackName, song.title) }
+        if (fitting.isEmpty()) return null
+        val seconds = song.durationMs / 1_000.0
+        // Music videos often run longer than the audio (intros / outros), so allow slack.
+        val close = fitting.filter { track ->
+            song.durationMs <= 0 || track.duration == null || abs(track.duration - seconds) <= DURATION_TOLERANCE_S
+        }
+        val pool = close.ifEmpty { fitting }
+        val byLength = pool.sortedBy { track -> track.duration?.let { abs(it - seconds) } ?: Double.MAX_VALUE }
+        return byLength.firstOrNull { !it.syncedLyrics.isNullOrBlank() } ?: byLength.first()
     }
 
     private fun LrcLibTrackDto.hasLyrics(): Boolean =

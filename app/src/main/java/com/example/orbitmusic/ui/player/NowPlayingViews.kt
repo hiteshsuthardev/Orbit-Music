@@ -30,7 +30,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.orbitmusic.R
 import com.example.orbitmusic.domain.model.Lyrics
@@ -43,10 +42,16 @@ import com.example.orbitmusic.ui.theme.orbit.OrbitShapes
 import com.example.orbitmusic.ui.theme.orbit.OrbitTextButton
 import com.example.orbitmusic.ui.theme.orbit.OrbitTheme
 
-private val viewOptions = listOf(
+/**
+ * The Lyrics view is hidden for now (the lyrics code stays in place). Set to true to bring
+ * the Lyrics option back on Now Playing.
+ */
+internal const val LYRICS_ENABLED = false
+
+private val viewOptions = listOfNotNull(
     NowPlayingView.Poster to R.string.now_playing_view_poster,
     NowPlayingView.Video to R.string.now_playing_view_video,
-    NowPlayingView.Lyrics to R.string.now_playing_view_lyrics,
+    (NowPlayingView.Lyrics to R.string.now_playing_view_lyrics).takeIf { LYRICS_ENABLED },
 )
 
 /** Inactive lyric lines: white at 50% still reads at 4.5:1+ on the dark Now Playing scrim. */
@@ -91,8 +96,7 @@ internal fun NowPlayingViewSwitch(
 
 /**
  * Lyrics for the current song. Time-synced lyrics highlight and follow the line being sung
- * (tap a line to jump there); plain lyrics are a simple scrolling text. [bottomInset] keeps
- * the last lines clear of the small video tile.
+ * (tap a line to jump there); plain lyrics are a simple scrolling text.
  */
 @Composable
 internal fun LyricsPanel(
@@ -100,7 +104,6 @@ internal fun LyricsPanel(
     positionMs: Long,
     onSeek: (Long) -> Unit,
     onRetry: () -> Unit,
-    bottomInset: Dp,
     modifier: Modifier = Modifier,
 ) {
     when (state) {
@@ -118,7 +121,7 @@ internal fun LyricsPanel(
             modifier = modifier,
             action = { OrbitTextButton(stringResource(R.string.action_retry), onRetry, color = OnColor.Primary) },
         )
-        is LyricsUiState.Found -> LyricsList(state.lyrics, positionMs, onSeek, bottomInset, modifier)
+        is LyricsUiState.Found -> LyricsList(state.lyrics, positionMs, onSeek, modifier)
     }
 }
 
@@ -127,7 +130,6 @@ private fun LyricsList(
     lyrics: Lyrics,
     positionMs: Long,
     onSeek: (Long) -> Unit,
-    bottomInset: Dp,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -148,7 +150,7 @@ private fun LyricsList(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = topPadding, bottom = bottomInset + 16.dp),
+            contentPadding = PaddingValues(top = topPadding, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(if (synced) 14.dp else 6.dp),
         ) {
             itemsIndexed(lyrics.lines) { index, line ->

@@ -71,6 +71,7 @@ import com.example.orbitmusic.ui.components.SectionHeader
 import com.example.orbitmusic.ui.components.SongListSkeleton
 import com.example.orbitmusic.ui.components.SongRow
 import com.example.orbitmusic.ui.components.orbit.OrbitLoader
+import com.example.orbitmusic.ui.components.orbit.OrbitSpin
 import com.example.orbitmusic.ui.screens.songactions.LocalSongActions
 import com.example.orbitmusic.ui.theme.OrbitMusicTheme
 import com.example.orbitmusic.ui.theme.orbit.OrbitChip
@@ -165,7 +166,10 @@ internal fun SearchContent(
             .background(OrbitTheme.colors.background)
             .windowInsetsPadding(WindowInsets.statusBars),
     ) {
-        ScreenHeader(title = stringResource(R.string.search_title))
+        ScreenHeader(
+            title = stringResource(R.string.search_title),
+            trailing = { OrbitSpin(modifier = Modifier.padding(end = 8.dp)) },
+        )
         OrbitSearchField(
             value = state.query,
             onValueChange = callbacks.onQueryChange,

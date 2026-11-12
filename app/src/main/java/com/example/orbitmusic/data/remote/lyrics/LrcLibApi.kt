@@ -11,11 +11,16 @@ import retrofit2.http.Query
  */
 interface LrcLibApi {
 
+    /** Lookup by track (and optionally artist) name. */
     @GET("api/search")
     suspend fun search(
         @Query("track_name") trackName: String,
         @Query("artist_name") artistName: String?,
     ): List<LrcLibTrackDto>
+
+    /** Free-text search across title, artist and album. */
+    @GET("api/search")
+    suspend fun searchText(@Query("q") query: String): List<LrcLibTrackDto>
 
     companion object {
         const val BASE_URL = "https://lrclib.net/"

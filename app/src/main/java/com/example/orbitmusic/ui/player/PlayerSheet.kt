@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.zIndex
 import kotlin.math.roundToInt
 
 private val CollapsedHorizontalMargin = 8.dp
@@ -60,6 +61,9 @@ private val CollapsedCorner = 16.dp
 private val MiniTileCorner = 6.dp
 private val FullArtCorner = 18.dp
 private val VideoTileCorner = 12.dp
+
+/** Below this the live player counts as hidden and moves behind the content. */
+private const val HIDDEN_ALPHA = 0.02f
 
 /** How far a vertical swipe must travel to open or close the player. */
 private val SwipeThreshold = 48.dp
@@ -71,8 +75,8 @@ private const val PAUSED_COVER_SCALE = 0.9f
  * it; swipe down or Back closes it. A swipe only chooses the state - the sheet never
  * follows the finger, so it can't be left part-way. The transition animates the sheet's
  * bounds and cross-fades the two layouts, while the one live YouTube player glides between
- * the mini tile and its Now Playing slot (the large cover in Video view, or the small video
- * tile in Poster / Lyrics view) without ever detaching the WebView.
+ * the mini tile and the large cover in Video view (in Poster / Lyrics view it keeps playing
+ * hidden) without ever detaching the WebView.
  */
 @Composable
 fun PlayerSheet(
@@ -228,8 +232,9 @@ fun PlayerSheet(
                 )
             }
 
-            // The single live player, morphing between the mini tile and its Now Playing slot
-            // (large cover in Video view, small tile in Poster / Lyrics view).
+            // The single live player, morphing between the mini tile and its Now Playing slot.
+            // In Poster / Lyrics view it keeps playing in a hidden slot: fully transparent and
+            // drawn (and hit-tested) behind the content, so only the poster or lyrics show.
             val from = miniSlot
             if (from != null) {
                 val large = videoSlot
@@ -241,16 +246,19 @@ fun PlayerSheet(
                 val rect = if (target == null) from else lerp(from, target, f)
                 val openCorner = lerp(VideoTileCorner, FullArtCorner, videoFraction)
                 val coverShape = RoundedCornerShape(lerp(MiniTileCorner, openCorner, f))
-                // Only the large cover breathes with play/pause; the small tile stays still.
+                // Only the large cover breathes with play/pause.
                 val breathing = f * videoFraction
+                val playerAlpha = 1f - f * (1f - videoFraction)
                 Box(
                     Modifier
+                        .zIndex(if (playerAlpha < HIDDEN_ALPHA) -1f else 0f)
                         .offset { IntOffset(rect.left.roundToInt(), rect.top.roundToInt()) }
                         .size(with(density) { rect.width.toDp() }, with(density) { rect.height.toDp() })
                         .graphicsLayer {
                             val scale = 1f + (coverScale - 1f) * breathing
                             scaleX = scale
                             scaleY = scale
+                            alpha = playerAlpha
                         }
                         .floatingShadow(lerp(0.dp, lerp(16.dp, 28.dp, videoFraction), f), coverShape, alpha = 0.5f)
                         .clip(coverShape)

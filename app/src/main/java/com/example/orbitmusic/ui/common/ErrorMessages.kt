@@ -21,5 +21,11 @@ fun AppError.messageRes(): Int = when (this) {
     AppError.PlayServicesUnavailable -> R.string.error_play_services
     AppError.ConsentDenied -> R.string.error_consent_denied
     AppError.AuthorizationRequired -> R.string.error_authorization_required
+    AppError.AiNotConfigured -> R.string.error_ai_not_configured
+    AppError.AiInvalidKey -> R.string.error_ai_invalid_key
+    is AppError.AiRateLimited -> R.string.error_ai_busy
+    AppError.AiUnavailable -> R.string.error_ai_unavailable
+    AppError.AiTimeout -> R.string.error_ai_timeout
+    AppError.AiBadResponse -> R.string.error_ai_bad_response
     is AppError.Unknown -> R.string.error_unknown
 }

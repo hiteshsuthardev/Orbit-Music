@@ -26,7 +26,6 @@ import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -78,7 +77,6 @@ private val themeOptions = listOf(
 @Composable
 fun SettingsScreen(
     contentPadding: PaddingValues,
-    onOpenDesignSystem: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -108,7 +106,6 @@ fun SettingsScreen(
             },
             onClearHistory = viewModel::onClearHistory,
             onRequestSignOut = viewModel::onRequestSignOut,
-            onOpenDesignSystem = onOpenDesignSystem,
         ),
     )
     state.pendingConfirmation?.let { kind ->
@@ -125,12 +122,11 @@ internal class SettingsCallbacks(
     val onClearImageCache: () -> Unit,
     val onClearHistory: () -> Unit,
     val onRequestSignOut: (SignOutConfirmation) -> Unit,
-    val onOpenDesignSystem: () -> Unit,
 )
 
 /**
- * Account card, theme segmented control, "Playback" and "Storage and about" groups, then
- * Sign out as an accent text button.
+ * Profile: the signed-in user's picture, name and email, then the theme segmented control,
+ * "Playback" and "Storage and about" groups, and Sign out as an accent text button.
  */
 @Composable
 internal fun SettingsContent(
@@ -153,7 +149,7 @@ internal fun SettingsContent(
             modifier = Modifier.padding(horizontal = OrbitDimens.ScreenPadding),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            state.user?.let { AccountCard(user = it, canEditPlaylists = state.canEditPlaylists) }
+            state.user?.let { ProfileHeader(user = it, canEditPlaylists = state.canEditPlaylists) }
 
             Section(R.string.settings_section_appearance) {
                 OrbitSegmented(
@@ -207,17 +203,6 @@ internal fun SettingsContent(
                                 trailing = { Icon(Icons.Rounded.DeleteSweep, contentDescription = null, tint = colors.textSecondary) },
                             )
                         }
-                        if (BuildConfig.DEBUG) {
-                            add {
-                                SettingsRow(
-                                    icon = Icons.Rounded.Palette,
-                                    iconTileColor = BrandColors.Violet,
-                                    title = stringResource(R.string.settings_design_system),
-                                    subtitle = stringResource(R.string.settings_design_system_body),
-                                    onClick = callbacks.onOpenDesignSystem,
-                                )
-                            }
-                        }
                         add {
                             SettingsRow(
                                 icon = Icons.Rounded.Info,
@@ -263,29 +248,32 @@ private fun Section(@StringRes title: Int, content: @Composable () -> Unit) {
     }
 }
 
-/** Gradient avatar, name, email and the current YouTube access level. */
+/** The Google account picture (gradient initial if there is none), name, email and YouTube access. */
 @Composable
-private fun AccountCard(user: UserProfile, canEditPlaylists: Boolean) {
+private fun ProfileHeader(user: UserProfile, canEditPlaylists: Boolean) {
     val colors = OrbitTheme.colors
     OrbitSurface(modifier = Modifier.fillMaxWidth(), shape = OrbitShapes.GroupedList) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            UserAvatar(name = user.displayName ?: user.email, photoUrl = user.photoUrl, size = 60.dp)
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(user.displayName ?: user.firstName, style = OrbitTheme.type.sectionTitle, color = colors.textPrimary)
-                Text(user.email, style = OrbitTheme.type.secondary, color = colors.textSecondary)
-                Spacer(Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.VerifiedUser, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(
-                            if (canEditPlaylists) R.string.settings_youtube_access_edit else R.string.settings_youtube_access_read,
-                        ),
-                        style = OrbitTheme.type.smallLabel,
-                        color = colors.textSecondary,
-                    )
-                }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 24.dp, horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            UserAvatar(name = user.displayName ?: user.email, photoUrl = user.photoUrl, size = 96.dp)
+            Spacer(Modifier.height(14.dp))
+            Text(user.displayName ?: user.firstName, style = OrbitTheme.type.sectionTitle, color = colors.textPrimary)
+            Text(user.email, style = OrbitTheme.type.secondary, color = colors.textSecondary)
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.VerifiedUser, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = stringResource(
+                        if (canEditPlaylists) R.string.settings_youtube_access_edit else R.string.settings_youtube_access_read,
+                    ),
+                    style = OrbitTheme.type.smallLabel,
+                    color = colors.textSecondary,
+                )
             }
         }
     }
@@ -317,7 +305,7 @@ private fun SignOutDialog(
     )
 }
 
-internal val noSettingsCallbacks = SettingsCallbacks({}, {}, {}, {}, {})
+internal val noSettingsCallbacks = SettingsCallbacks({}, {}, {}, {})
 
 @OrbitPreviews
 @Composable
