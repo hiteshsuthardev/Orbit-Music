@@ -1,6 +1,8 @@
 package com.example.orbitmusic.ui.screens.settings
 
 import android.text.format.Formatter
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -26,11 +28,13 @@ import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +58,8 @@ import com.example.orbitmusic.domain.model.UserProfile
 import com.example.orbitmusic.ui.components.ScreenHeader
 import com.example.orbitmusic.ui.components.UserAvatar
 import com.example.orbitmusic.ui.theme.OrbitMusicTheme
+import com.example.orbitmusic.ui.update.ManualCheck
+import com.example.orbitmusic.ui.update.UpdateViewModel
 import com.example.orbitmusic.ui.theme.orbit.BrandColors
 import com.example.orbitmusic.ui.theme.orbit.OrbitDimens
 import com.example.orbitmusic.ui.theme.orbit.OrbitPreviews
@@ -82,6 +88,11 @@ fun SettingsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // The app-wide (activity-scoped) update flow, so a found update opens the same dialog.
+    val activity = LocalActivity.current as ComponentActivity
+    val updates: UpdateViewModel = hiltViewModel(activity)
+    val updateState by updates.state.collectAsStateWithLifecycle()
+    DisposableEffect(Unit) { onDispose { updates.clearManualCheck() } }
     // Artwork image cache (Coil). The YouTube data cache is managed by its own TTLs.
     var imageCacheBytes by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(Unit) {
@@ -92,6 +103,7 @@ fun SettingsScreen(
         state = state,
         contentPadding = contentPadding,
         imageCacheSize = imageCacheBytes?.let { Formatter.formatShortFileSize(context, it) },
+        updateCheck = updateState.manualCheck,
         callbacks = SettingsCallbacks(
             onThemeSelected = viewModel::onThemeSelected,
             onClearImageCache = {
@@ -106,6 +118,7 @@ fun SettingsScreen(
             },
             onClearHistory = viewModel::onClearHistory,
             onRequestSignOut = viewModel::onRequestSignOut,
+            onCheckForUpdates = updates::checkNow,
         ),
     )
     state.pendingConfirmation?.let { kind ->
@@ -122,6 +135,7 @@ internal class SettingsCallbacks(
     val onClearImageCache: () -> Unit,
     val onClearHistory: () -> Unit,
     val onRequestSignOut: (SignOutConfirmation) -> Unit,
+    val onCheckForUpdates: () -> Unit,
 )
 
 /**
@@ -134,6 +148,7 @@ internal fun SettingsContent(
     contentPadding: PaddingValues,
     imageCacheSize: String?,
     callbacks: SettingsCallbacks,
+    updateCheck: ManualCheck = ManualCheck.Idle,
 ) {
     val colors = OrbitTheme.colors
     Column(
@@ -201,6 +216,22 @@ internal fun SettingsContent(
                                 subtitle = if (state.historyCleared) stringResource(R.string.settings_history_cleared) else null,
                                 onClick = callbacks.onClearHistory,
                                 trailing = { Icon(Icons.Rounded.DeleteSweep, contentDescription = null, tint = colors.textSecondary) },
+                            )
+                        }
+                        add {
+                            SettingsRow(
+                                icon = Icons.Rounded.SystemUpdate,
+                                iconTileColor = BrandColors.Supporting[3],
+                                title = stringResource(R.string.settings_check_updates),
+                                subtitle = stringResource(
+                                    when (updateCheck) {
+                                        ManualCheck.Idle -> R.string.settings_check_updates_idle
+                                        ManualCheck.Checking -> R.string.settings_check_updates_checking
+                                        ManualCheck.UpToDate -> R.string.settings_check_updates_latest
+                                        ManualCheck.Failed -> R.string.settings_check_updates_failed
+                                    },
+                                ),
+                                onClick = { if (updateCheck != ManualCheck.Checking) callbacks.onCheckForUpdates() },
                             )
                         }
                         add {
@@ -305,7 +336,7 @@ private fun SignOutDialog(
     )
 }
 
-internal val noSettingsCallbacks = SettingsCallbacks({}, {}, {}, {})
+internal val noSettingsCallbacks = SettingsCallbacks({}, {}, {}, {}, {})
 
 @OrbitPreviews
 @Composable

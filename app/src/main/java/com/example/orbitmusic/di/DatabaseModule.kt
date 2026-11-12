@@ -14,6 +14,10 @@ import com.example.orbitmusic.data.local.db.dao.SongDao
 import com.example.orbitmusic.data.local.db.DatabaseSessionCleaner
 import com.example.orbitmusic.data.repository.AiUsageRepositoryImpl
 import com.example.orbitmusic.data.repository.ChannelRepositoryImpl
+import com.example.orbitmusic.data.update.RemoteConfigRepositoryImpl
+import com.example.orbitmusic.data.update.UpdateRepositoryImpl
+import com.example.orbitmusic.domain.update.RemoteConfigRepository
+import com.example.orbitmusic.domain.update.UpdateRepository
 import com.example.orbitmusic.data.repository.GroqAiRepository
 import com.example.orbitmusic.data.repository.LyricsRepositoryImpl
 import com.example.orbitmusic.data.repository.PlaylistRepositoryImpl
@@ -91,6 +95,12 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindLyricsRepository(impl: LyricsRepositoryImpl): LyricsRepository
+
+    @Binds
+    abstract fun bindUpdateRepository(impl: UpdateRepositoryImpl): UpdateRepository
+
+    @Binds
+    abstract fun bindRemoteConfigRepository(impl: RemoteConfigRepositoryImpl): RemoteConfigRepository
 
     @Binds
     abstract fun bindAiUsageRepository(impl: AiUsageRepositoryImpl): AiUsageRepository

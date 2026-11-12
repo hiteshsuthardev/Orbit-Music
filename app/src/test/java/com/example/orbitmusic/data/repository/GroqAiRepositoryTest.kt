@@ -9,6 +9,10 @@ import com.example.orbitmusic.data.remote.ai.ChatRequestDto
 import com.example.orbitmusic.data.remote.ai.ChatResponseDto
 import com.example.orbitmusic.domain.model.AppError
 import com.example.orbitmusic.domain.model.Resource
+import com.example.orbitmusic.domain.update.RemoteConfig
+import com.example.orbitmusic.domain.update.RemoteConfigRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.Headers.Companion.headersOf
@@ -21,6 +25,14 @@ import retrofit2.HttpException
 import retrofit2.Response
 import java.io.IOException
 import java.net.SocketTimeoutException
+
+/** Remote config with nothing set (no model override). */
+private object NoRemoteConfig : RemoteConfigRepository {
+    override val config: Flow<RemoteConfig> = flowOf(RemoteConfig())
+    override suspend fun refresh() = Unit
+    override val dismissedAnnouncement: Flow<String?> = flowOf(null)
+    override suspend fun dismissAnnouncement(text: String) = Unit
+}
 
 class GroqAiRepositoryTest {
 
@@ -56,7 +68,7 @@ class GroqAiRepositoryTest {
     @Test
     fun parsesStructuredReply() = runTest {
         val api = ScriptedApi(validReply)
-        val result = GroqAiRepository(api, config, json).curatePlaylist("gym songs", emptyList(), allowExplicit = false)
+        val result = GroqAiRepository(api, config, NoRemoteConfig, json).curatePlaylist("gym songs", emptyList(), allowExplicit = false)
         assertEquals("Gym", (result as Resource.Success).data.playlist.name)
         assertEquals(AiPrompts.jsonSchemaFormat, api.requests.single().responseFormat)
         assertTrue(api.requests.single().messages.first().content.contains("NOT allowed"))
@@ -68,7 +80,7 @@ class GroqAiRepositoryTest {
             httpError(400, """{"error":{"message":"This model does not support response format `json_schema`"}}"""),
             validReply,
         )
-        val result = GroqAiRepository(api, config, json).curatePlaylist("gym songs", emptyList(), allowExplicit = true)
+        val result = GroqAiRepository(api, config, NoRemoteConfig, json).curatePlaylist("gym songs", emptyList(), allowExplicit = true)
         assertTrue(result is Resource.Success)
         assertEquals(AiPrompts.jsonObjectFormat, api.requests.last().responseFormat)
     }
@@ -79,7 +91,7 @@ class GroqAiRepositoryTest {
             httpError(400, """{"error":{"message":"Failed to validate JSON.","code":"json_validate_failed"}}"""),
             validReply,
         )
-        val result = GroqAiRepository(api, config, json).curatePlaylist("30 songs", emptyList(), allowExplicit = false)
+        val result = GroqAiRepository(api, config, NoRemoteConfig, json).curatePlaylist("30 songs", emptyList(), allowExplicit = false)
         assertTrue(result is Resource.Success)
         assertEquals(AiPrompts.JSON_REMINDER, api.requests.last().messages.last().content)
         // Still on structured output: this was not a "format unsupported" rejection.
@@ -89,17 +101,17 @@ class GroqAiRepositoryTest {
     @Test
     fun reasoningEffortOnlyForGptOss() = runTest {
         val gptOss = ScriptedApi(validReply)
-        GroqAiRepository(gptOss, config.copy(model = "openai/gpt-oss-120b"), json).curatePlaylist("x", emptyList(), false)
+        GroqAiRepository(gptOss, config.copy(model = "openai/gpt-oss-120b"), NoRemoteConfig, json).curatePlaylist("x", emptyList(), false)
         assertEquals("low", gptOss.requests.single().reasoningEffort)
         val other = ScriptedApi(validReply)
-        GroqAiRepository(other, config.copy(model = "qwen/qwen3.8-27b"), json).curatePlaylist("x", emptyList(), false)
+        GroqAiRepository(other, config.copy(model = "qwen/qwen3.8-27b"), NoRemoteConfig, json).curatePlaylist("x", emptyList(), false)
         assertEquals(null, other.requests.single().reasoningEffort)
     }
 
     @Test
     fun retriesOnceWithReminderThenFails() = runTest {
         val api = ScriptedApi("not json", "still not json")
-        val result = GroqAiRepository(api, config, json).curatePlaylist("anything", emptyList(), allowExplicit = false)
+        val result = GroqAiRepository(api, config, NoRemoteConfig, json).curatePlaylist("anything", emptyList(), allowExplicit = false)
         assertEquals(AppError.AiBadResponse, (result as Resource.Error).error)
         assertEquals(AiPrompts.JSON_REMINDER, api.requests.last().messages.last().content)
     }
@@ -107,16 +119,26 @@ class GroqAiRepositoryTest {
     @Test
     fun reminderRetryCanSucceed() = runTest {
         val api = ScriptedApi("oops", validReply)
-        val result = GroqAiRepository(api, config, json).curatePlaylist("anything", emptyList(), allowExplicit = false)
+        val result = GroqAiRepository(api, config, NoRemoteConfig, json).curatePlaylist("anything", emptyList(), allowExplicit = false)
         assertTrue(result is Resource.Success)
     }
 
     @Test
     fun missingConfigurationIsReportedWithoutCalling() = runTest {
         val api = ScriptedApi()
-        val result = GroqAiRepository(api, config.copy(apiKey = ""), json).curatePlaylist("x", emptyList(), false)
+        val result = GroqAiRepository(api, config.copy(apiKey = ""), NoRemoteConfig, json).curatePlaylist("x", emptyList(), false)
         assertEquals(AppError.AiNotConfigured, (result as Resource.Error).error)
         assertTrue(api.requests.isEmpty())
+    }
+
+    @Test
+    fun remoteConfigCanSwitchTheModel() = runTest {
+        val api = ScriptedApi(validReply)
+        val remote = object : RemoteConfigRepository by NoRemoteConfig {
+            override val config: Flow<RemoteConfig> = flowOf(RemoteConfig(aiModel = "openai/gpt-oss-20b"))
+        }
+        GroqAiRepository(api, config, remote, json).curatePlaylist("x", emptyList(), false)
+        assertEquals("openai/gpt-oss-20b", api.requests.single().model)
     }
 
     @Test

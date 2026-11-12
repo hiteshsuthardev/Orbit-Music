@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Campaign
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -68,6 +70,7 @@ import com.example.orbitmusic.ui.theme.OrbitMusicTheme
 import com.example.orbitmusic.ui.theme.orbit.BrandColors
 import com.example.orbitmusic.ui.theme.orbit.OnColor
 import com.example.orbitmusic.ui.theme.orbit.OrbitDimens
+import com.example.orbitmusic.ui.theme.orbit.OrbitIconButton
 import com.example.orbitmusic.ui.theme.orbit.OrbitPlayButton
 import com.example.orbitmusic.ui.theme.orbit.OrbitPreviews
 import com.example.orbitmusic.ui.theme.orbit.OrbitShapes
@@ -90,6 +93,8 @@ fun HomeScreen(
     onOpenPlaylist: (Playlist) -> Unit,
     onOpenLiked: () -> Unit,
     onSeeAllPlaylists: () -> Unit,
+    announcement: String? = null,
+    onDismissAnnouncement: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -104,6 +109,8 @@ fun HomeScreen(
         onSeeAllPlaylists = onSeeAllPlaylists,
         onPlaySong = { list, song -> actions.play(list, song) },
         onSongMenu = actions::showMenu,
+        announcement = announcement,
+        onDismissAnnouncement = onDismissAnnouncement,
     )
 }
 
@@ -123,6 +130,8 @@ internal fun HomeContent(
     onSeeAllPlaylists: () -> Unit,
     onPlaySong: (List<Song>, Song) -> Unit,
     onSongMenu: (Song) -> Unit,
+    announcement: String? = null,
+    onDismissAnnouncement: () -> Unit = {},
 ) {
     val colors = OrbitTheme.colors
     val pullState = rememberPullToRefreshState()
@@ -167,6 +176,11 @@ internal fun HomeContent(
             ) {
                 item(key = "header") {
                     HomeHeader(greeting = state.greeting)
+                }
+                announcement?.let { text ->
+                    item(key = "announcement") {
+                        AnnouncementBanner(text = text, onDismiss = onDismissAnnouncement)
+                    }
                 }
                 if (state.isOffline) {
                     item(key = "offline") {
@@ -312,6 +326,38 @@ private fun HomeHeader(greeting: Greeting) {
         ),
         trailing = { OrbitSpin(modifier = Modifier.padding(end = 8.dp)) },
     )
+}
+
+/** A message from the developer (remote config), closable; shown until a new one arrives. */
+@Composable
+private fun AnnouncementBanner(text: String, onDismiss: () -> Unit) {
+    val colors = OrbitTheme.colors
+    Row(
+        modifier = Modifier
+            .padding(horizontal = OrbitDimens.ScreenPadding)
+            .fillMaxWidth()
+            .clip(OrbitShapes.GroupedList)
+            .background(colors.surface)
+            .padding(start = 14.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.Campaign, contentDescription = null, tint = colors.accentText)
+        Spacer(Modifier.size(12.dp))
+        Text(
+            text,
+            style = OrbitTheme.type.secondary,
+            color = colors.textPrimary,
+            modifier = Modifier
+                .weight(1f)
+                .padding(vertical = 10.dp),
+        )
+        OrbitIconButton(
+            imageVector = Icons.Rounded.Close,
+            contentDescription = stringResource(R.string.cd_dismiss_announcement),
+            onClick = onDismiss,
+            tint = colors.textSecondary,
+        )
+    }
 }
 
 /** 196dp hero: artwork (or mesh) under a bottom scrim, white text and a white play button. */

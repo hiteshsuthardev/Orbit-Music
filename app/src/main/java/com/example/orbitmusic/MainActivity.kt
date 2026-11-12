@@ -23,12 +23,17 @@ import com.example.orbitmusic.domain.model.ThemeMode
 import com.example.orbitmusic.ui.MainViewModel
 import com.example.orbitmusic.ui.OrbitApp
 import com.example.orbitmusic.ui.theme.OrbitMusicTheme
+import com.example.orbitmusic.ui.update.AppUpdateHost
+import com.example.orbitmusic.ui.update.UpdateViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
+
+    /** Activity-scoped so Profile's "Check for updates" shares it (see SettingsScreen). */
+    private val updateViewModel: UpdateViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Android's own splash (plum + white logo) hands over to the Compose splash, whose first
@@ -62,10 +67,12 @@ class MainActivity : ComponentActivity() {
             OrbitMusicTheme(darkTheme = dark) {
                 Crossfade(targetState = state.isReady && splashShown, label = "splash") { ready ->
                     if (ready) {
-                        OrbitApp(
-                            startDestination = state.startDestination,
-                            authState = state.authState,
-                        )
+                        AppUpdateHost(updateViewModel) {
+                            OrbitApp(
+                                startDestination = state.startDestination,
+                                authState = state.authState,
+                            )
+                        }
                     } else {
                         SplashScreen()
                     }

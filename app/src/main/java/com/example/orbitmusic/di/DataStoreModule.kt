@@ -38,12 +38,18 @@ annotation class PlaybackSessionDataStore
 @Retention(AnnotationRetention.BINARY)
 annotation class AiUsageDataStore
 
+/** Self-hosted update history and the cached remote config. */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class AppUpdateDataStore
+
 /** File names are also referenced from res/xml backup rules. */
 object DataStoreFiles {
     const val USER_PREFERENCES = "user_preferences"
     const val SESSION = "secure_session"
     const val PLAYBACK_SESSION = "playback_session"
     const val AI_USAGE = "ai_usage"
+    const val APP_UPDATE = "app_update"
 }
 
 @Module
@@ -72,6 +78,18 @@ object DataStoreModule {
         corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
         scope = CoroutineScope(SupervisorJob() + ioDispatcher),
         produceFile = { context.preferencesDataStoreFile(DataStoreFiles.SESSION) },
+    )
+
+    @Provides
+    @Singleton
+    @AppUpdateDataStore
+    fun provideAppUpdateDataStore(
+        @ApplicationContext context: Context,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
+        corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+        scope = CoroutineScope(SupervisorJob() + ioDispatcher),
+        produceFile = { context.preferencesDataStoreFile(DataStoreFiles.APP_UPDATE) },
     )
 
     @Provides

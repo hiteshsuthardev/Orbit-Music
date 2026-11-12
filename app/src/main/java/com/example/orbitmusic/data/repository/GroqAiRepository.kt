@@ -12,13 +12,16 @@ import com.example.orbitmusic.domain.model.AiTurn
 import com.example.orbitmusic.domain.model.AppError
 import com.example.orbitmusic.domain.model.Resource
 import com.example.orbitmusic.domain.repository.AiRepository
+import com.example.orbitmusic.domain.update.RemoteConfigRepository
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import retrofit2.HttpException
 import java.io.IOException
 import java.io.InterruptedIOException
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.ceil
@@ -39,31 +42,34 @@ import kotlin.math.ceil
 class GroqAiRepository @Inject constructor(
     private val api: ChatCompletionsApi,
     private val config: AiConfig,
+    private val remoteConfig: RemoteConfigRepository,
     json: Json,
 ) : AiRepository {
 
     private val parser = AiReplyParser(json)
 
-    /** Set once the model has rejected json_schema. */
-    @Volatile
-    private var jsonSchemaUnsupported = false
+    /** Models that rejected json_schema; they use json_object from then on. */
+    private val modelsWithoutJsonSchema: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     override suspend fun curatePlaylist(
         prompt: String,
         history: List<AiTurn>,
         allowExplicit: Boolean,
     ): Resource<AiCuration> {
-        if (!config.isConfigured) return Resource.Error(AppError.AiNotConfigured)
+        // The remote config may switch models without an app update (ai_model).
+        val model = remoteConfig.config.first().aiModel ?: config.model
+        if (!config.copy(model = model).isConfigured) return Resource.Error(AppError.AiNotConfigured)
         val messages = buildList {
             add(ChatMessageDto("system", AiPrompts.system(allowExplicit)))
             history.forEach { add(ChatMessageDto(it.role.apiName(), it.content)) }
             add(ChatMessageDto("user", prompt))
         }
         return try {
-            val reply = complete(messages)
+            val reply = complete(model, messages)
             parser.parse(reply)?.let { return Resource.Success(AiCuration(it, reply)) }
             // One retry with a reminder, then give up with a friendly error.
             val retryReply = complete(
+                model,
                 messages + ChatMessageDto("assistant", reply) + ChatMessageDto("user", AiPrompts.JSON_REMINDER),
             )
             parser.parse(retryReply)?.let { Resource.Success(AiCuration(it, retryReply)) }
@@ -76,35 +82,35 @@ class GroqAiRepository @Inject constructor(
     }
 
     /** The model's reply text; empty when Groq rejected the generation as invalid JSON. */
-    private suspend fun complete(messages: List<ChatMessageDto>): String {
-        if (!jsonSchemaUnsupported) {
+    private suspend fun complete(model: String, messages: List<ChatMessageDto>): String {
+        if (model !in modelsWithoutJsonSchema) {
             try {
-                return request(messages, AiPrompts.jsonSchemaFormat)
+                return request(model, messages, AiPrompts.jsonSchemaFormat)
             } catch (error: HttpException) {
                 when (error.badRequestKind()) {
-                    BadRequest.ResponseFormatUnsupported -> jsonSchemaUnsupported = true
+                    BadRequest.ResponseFormatUnsupported -> modelsWithoutJsonSchema += model
                     BadRequest.InvalidJsonGenerated -> return ""
                     null -> throw error
                 }
             }
         }
         return try {
-            request(messages, AiPrompts.jsonObjectFormat)
+            request(model, messages, AiPrompts.jsonObjectFormat)
         } catch (error: HttpException) {
             if (error.badRequestKind() == BadRequest.InvalidJsonGenerated) "" else throw error
         }
     }
 
-    private suspend fun request(messages: List<ChatMessageDto>, format: JsonObject): String {
+    private suspend fun request(model: String, messages: List<ChatMessageDto>, format: JsonObject): String {
         val response = api.complete(
             endpoint = config.endpoint,
             request = ChatRequestDto(
-                model = config.model,
+                model = model,
                 messages = messages,
                 temperature = AiPrompts.TEMPERATURE,
                 maxTokens = AiPrompts.MAX_TOKENS,
                 responseFormat = format,
-                reasoningEffort = AiPrompts.reasoningEffortFor(config.model),
+                reasoningEffort = AiPrompts.reasoningEffortFor(model),
             ),
         )
         return response.choices.firstOrNull()?.message?.content.orEmpty()

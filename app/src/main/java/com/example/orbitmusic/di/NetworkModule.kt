@@ -34,9 +34,30 @@ import javax.inject.Singleton
 @Retention(AnnotationRetention.BINARY)
 annotation class BuildTypeInterceptors
 
+/** Client for update files (version.json, remote config, APKs). */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class UpdateHttpClient
+
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+
+    /**
+     * Update downloads: no YouTube credentials, sensible timeouts, and redirects may never
+     * leave HTTPS (GitHub release links redirect to its download servers over HTTPS).
+     */
+    @Provides
+    @Singleton
+    @UpdateHttpClient
+    fun provideUpdateHttpClient(
+        @BuildTypeInterceptors extraInterceptors: Set<@JvmSuppressWildcards Interceptor>,
+    ): OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .followSslRedirects(false)
+        .apply { extraInterceptors.forEach(::addInterceptor) }
+        .build()
 
     @Provides
     @Singleton

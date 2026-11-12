@@ -77,6 +77,7 @@ import com.example.orbitmusic.ui.navigation.PlaylistDetailRoute
 import com.example.orbitmusic.ui.navigation.SearchRoute
 import com.example.orbitmusic.ui.components.ProfileTabIcon
 import com.example.orbitmusic.ui.screens.ai.OrbitAiScreen
+import com.example.orbitmusic.ui.update.RemoteConfigViewModel
 import com.example.orbitmusic.ui.theme.orbit.OrbitBottomBarCenter
 import com.example.orbitmusic.ui.navigation.OrbitAiRoute
 import com.example.orbitmusic.ui.navigation.SettingsRoute
@@ -108,8 +109,18 @@ fun MainScreen() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val songActionsViewModel: SongActionsViewModel = hiltViewModel()
+    val remoteConfig: RemoteConfigViewModel = hiltViewModel()
+    val aiEnabled by remoteConfig.aiEnabled.collectAsStateWithLifecycle()
+    val announcement by remoteConfig.announcement.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Leave Orbit AI if it gets switched off remotely while open.
+    LaunchedEffect(aiEnabled) {
+        if (!aiEnabled && backStackEntry?.destination?.hasRoute(OrbitAiRoute::class) == true) {
+            navController.navigateToTab(HomeRoute)
+        }
+    }
 
     // Pushed screens (Playlist Detail) keep the tab they were opened from highlighted.
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -210,6 +221,8 @@ fun MainScreen() {
                         onOpenPlaylist = openPlaylist,
                         onOpenLiked = { openLibraryTab(LibraryTab.Liked) },
                         onSeeAllPlaylists = { openLibraryTab(LibraryTab.Playlists) },
+                        announcement = announcement,
+                        onDismissAnnouncement = remoteConfig::dismissAnnouncement,
                     )
                 }
                 composable<SearchRoute> {
@@ -254,14 +267,19 @@ fun MainScreen() {
                         selectedIndex = index
                         navController.navigateToTab(tabRoutes[index])
                     },
-                    center = OrbitBottomBarCenter(
-                        label = stringResource(R.string.nav_orbit_ai),
-                        selected = selectedIndex == ORBIT_AI_SELECTED,
-                        onClick = {
-                            selectedIndex = ORBIT_AI_SELECTED
-                            navController.navigateToTab(OrbitAiRoute)
-                        },
-                    ),
+                    // Orbit AI can be switched off remotely; its button then disappears.
+                    center = if (aiEnabled) {
+                        OrbitBottomBarCenter(
+                            label = stringResource(R.string.nav_orbit_ai),
+                            selected = selectedIndex == ORBIT_AI_SELECTED,
+                            onClick = {
+                                selectedIndex = ORBIT_AI_SELECTED
+                                navController.navigateToTab(OrbitAiRoute)
+                            },
+                        )
+                    } else {
+                        null
+                    },
                 )
             }
 

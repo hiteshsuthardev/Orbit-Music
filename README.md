@@ -7,7 +7,7 @@
 A beautiful, music-first player for the songs, playlists and likes in your YouTube account,
 with Orbit AI to build a playlist for any mood in seconds.
 
-`Version 1.5.0` · Android 8.0 and newer
+`Version 1.6.0` · Android 8.0 and newer
 
 </div>
 
@@ -173,6 +173,7 @@ Explicit songs are left out unless you turn on **Explicit songs**. Tap **New cha
 - **Appearance**: choose **System**, **Light** or **Dark**.
 - **Clear image cache** to free up space; the screen shows how much it's using.
 - **Clear history** to forget what you've played.
+- **Check for updates** to see if a newer version of Orbit Music is ready.
 - **Sign out**, or **Disconnect YouTube and sign out** to remove Orbit Music's access to your account completely.
 
 <br clear="right" />
@@ -181,6 +182,7 @@ Explicit songs are left out unless you turn on **Explicit songs**. Tap **New cha
 
 ## 💡 Good to know
 
+- **Updates:** Orbit Music tells you when a new version is ready. Tap **Update now** and it downloads, checks and installs the update for you. The first time, Android asks you to allow installs from Orbit Music.
 - **Internet:** songs play from YouTube, so you need a connection to listen. Your lists stay visible offline.
 - **Only music videos:** Shorts, live streams and non-music videos are hidden on purpose.
 - **Accessibility:** Orbit Music works with TalkBack, and if you turn on *Remove animations* in your phone's settings, it keeps everything still.
