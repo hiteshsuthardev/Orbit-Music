@@ -1,0 +1,25 @@
+package com.example.orbitmusic.ui.common
+
+import androidx.annotation.StringRes
+import com.example.orbitmusic.R
+import com.example.orbitmusic.domain.model.AppError
+
+/** Maps a domain error to its friendly, localized message. */
+@StringRes
+fun AppError.messageRes(): Int = when (this) {
+    AppError.NoInternet -> R.string.error_no_internet
+    AppError.QuotaExceeded -> R.string.error_quota_exceeded
+    AppError.TokenExpired -> R.string.error_token_expired
+    AppError.EmptyPlaylist -> R.string.error_empty_playlist
+    AppError.VideoUnavailable -> R.string.error_video_unavailable
+    AppError.NotFound -> R.string.error_not_found
+    AppError.PermissionRequired -> R.string.error_permission_required
+    AppError.NotSignedIn -> R.string.error_not_signed_in
+    AppError.SignInCancelled -> R.string.error_sign_in_cancelled
+    AppError.NoGoogleAccount -> R.string.error_no_google_account
+    AppError.MissingConfiguration -> R.string.error_missing_configuration
+    AppError.PlayServicesUnavailable -> R.string.error_play_services
+    AppError.ConsentDenied -> R.string.error_consent_denied
+    AppError.AuthorizationRequired -> R.string.error_authorization_required
+    is AppError.Unknown -> R.string.error_unknown
+}

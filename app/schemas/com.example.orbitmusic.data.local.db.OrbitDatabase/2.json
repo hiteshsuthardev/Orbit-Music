@@ -1,0 +1,374 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "574b4dc9fe2b4e673f2a0ab8d4640d8a",
+    "entities": [
+      {
+        "tableName": "songs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`videoId` TEXT NOT NULL, `title` TEXT NOT NULL, `artist` TEXT NOT NULL, `rawTitle` TEXT NOT NULL, `channelId` TEXT, `channelTitle` TEXT, `thumbnailUrl` TEXT, `durationMs` INTEGER NOT NULL, `isPlayable` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`videoId`))",
+        "fields": [
+          {
+            "fieldPath": "videoId",
+            "columnName": "videoId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "artist",
+            "columnName": "artist",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rawTitle",
+            "columnName": "rawTitle",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "channelId",
+            "columnName": "channelId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "channelTitle",
+            "columnName": "channelTitle",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "thumbnailUrl",
+            "columnName": "thumbnailUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "durationMs",
+            "columnName": "durationMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPlayable",
+            "columnName": "isPlayable",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "videoId"
+          ]
+        }
+      },
+      {
+        "tableName": "playlists",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `thumbnailUrl` TEXT, `itemCount` INTEGER NOT NULL, `channelTitle` TEXT, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thumbnailUrl",
+            "columnName": "thumbnailUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "itemCount",
+            "columnName": "itemCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "channelTitle",
+            "columnName": "channelTitle",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "collection_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`collectionKey` TEXT NOT NULL, `position` INTEGER NOT NULL, `itemId` TEXT NOT NULL, `itemType` INTEGER NOT NULL, `playlistItemId` TEXT, PRIMARY KEY(`collectionKey`, `position`))",
+        "fields": [
+          {
+            "fieldPath": "collectionKey",
+            "columnName": "collectionKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemId",
+            "columnName": "itemId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemType",
+            "columnName": "itemType",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playlistItemId",
+            "columnName": "playlistItemId",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "collectionKey",
+            "position"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_collection_items_itemId",
+            "unique": false,
+            "columnNames": [
+              "itemId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_collection_items_itemId` ON `${TABLE_NAME}` (`itemId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "cache_metadata",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `fetchedAt` INTEGER NOT NULL, `nextPageToken` TEXT, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fetchedAt",
+            "columnName": "fetchedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nextPageToken",
+            "columnName": "nextPageToken",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        }
+      },
+      {
+        "tableName": "favorites",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`videoId` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`videoId`))",
+        "fields": [
+          {
+            "fieldPath": "videoId",
+            "columnName": "videoId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addedAt",
+            "columnName": "addedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "videoId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_favorites_addedAt",
+            "unique": false,
+            "columnNames": [
+              "addedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_favorites_addedAt` ON `${TABLE_NAME}` (`addedAt`)"
+          }
+        ]
+      },
+      {
+        "tableName": "history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`videoId` TEXT NOT NULL, `lastPlayedAt` INTEGER NOT NULL, `playCount` INTEGER NOT NULL, PRIMARY KEY(`videoId`))",
+        "fields": [
+          {
+            "fieldPath": "videoId",
+            "columnName": "videoId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastPlayedAt",
+            "columnName": "lastPlayedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playCount",
+            "columnName": "playCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "videoId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_history_lastPlayedAt",
+            "unique": false,
+            "columnNames": [
+              "lastPlayedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_history_lastPlayedAt` ON `${TABLE_NAME}` (`lastPlayedAt`)"
+          }
+        ]
+      },
+      {
+        "tableName": "search_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`normalizedQuery` TEXT NOT NULL, `query` TEXT NOT NULL, `searchedAt` INTEGER NOT NULL, PRIMARY KEY(`normalizedQuery`))",
+        "fields": [
+          {
+            "fieldPath": "normalizedQuery",
+            "columnName": "normalizedQuery",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "query",
+            "columnName": "query",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "searchedAt",
+            "columnName": "searchedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "normalizedQuery"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_search_history_searchedAt",
+            "unique": false,
+            "columnNames": [
+              "searchedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_search_history_searchedAt` ON `${TABLE_NAME}` (`searchedAt`)"
+          }
+        ]
+      },
+      {
+        "tableName": "channels",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `thumbnailUrl` TEXT, `isMine` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thumbnailUrl",
+            "columnName": "thumbnailUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isMine",
+            "columnName": "isMine",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '574b4dc9fe2b4e673f2a0ab8d4640d8a')"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark is the default look, so the window starts dark in both system themes
+         (no white flash before the first frame). -->
+    <style name="Theme.OrbitMusic" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/orbit_background_dark</item>
+        <item name="android:colorAccent">@color/orbit_accent_dark</item>
+    </style>
+
+    <!-- Launch theme (androidx core-splashscreen): white logo on the plum brand base. -->
+    <style name="Theme.OrbitMusic.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/orbit_plum</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.OrbitMusic</item>
+    </style>
+</resources>

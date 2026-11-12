@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Orbit Music logo for the splash screen: a white planet with a tilted white ring
+    (white on coloured backgrounds). 288dp canvas with the artwork inside the central 192dp safe circle.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="288"
+    android:viewportHeight="288">
+
+    <!-- Back half of the ring (behind the planet) -->
+    <group
+        android:pivotX="144"
+        android:pivotY="144"
+        android:rotation="-18">
+        <path
+            android:pathData="M52,144 A92,34 0 0,1 236,144"
+            android:strokeWidth="12"
+            android:strokeColor="@color/orbit_white"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000" />
+    </group>
+
+    <!-- Planet -->
+    <path
+        android:fillColor="@color/orbit_white"
+        android:pathData="M144,94 a50,50 0 1,1 0,100 a50,50 0 1,1 0,-100 Z" />
+
+    <!-- Front half of the ring (over the planet) -->
+    <group
+        android:pivotX="144"
+        android:pivotY="144"
+        android:rotation="-18">
+        <path
+            android:pathData="M236,144 A92,34 0 0,1 52,144"
+            android:strokeWidth="12"
+            android:strokeColor="@color/orbit_white"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000" />
+    </group>
+</vector>

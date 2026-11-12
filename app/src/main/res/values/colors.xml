@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand colours used by XML resources (window, splash, launcher icon). Compose code
+         reads the same values from ui/theme/orbit/OrbitColors.kt. -->
+    <color name="orbit_rose">#FFFF3D71</color>
+    <color name="orbit_amber">#FFFF8A3D</color>
+    <color name="orbit_plum">#FF1A0820</color>
+    <color name="orbit_background_dark">#FF08080C</color>
+    <color name="orbit_accent_dark">#FFFF5C87</color>
+    <color name="orbit_white">#FFFFFFFF</color>
+</resources>

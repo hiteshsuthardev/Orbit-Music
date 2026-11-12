@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Auto Backup rules for Android 11 and lower.
+   The encrypted session is excluded: its Keystore key never leaves the device, so a
+   restored copy could not be decrypted (the user simply signs in again).
+-->
+<full-backup-content>
+    <exclude domain="file" path="datastore/secure_session.preferences_pb" />
+</full-backup-content>
