@@ -2,7 +2,7 @@ package com.example.orbitmusic.domain.ai
 
 import kotlin.time.Duration.Companion.hours
 
-/** Stored Orbit AI usage for one user: send times within the current window, and the all-time count. */
+/** Stored OrbitNova AI usage for one user: send times within the current window, and the all-time count. */
 data class AiUsage(
     val recentRequestTimes: List<Long> = emptyList(),
     val totalRequests: Int = 0,
@@ -26,7 +26,7 @@ data class AiAllowance(
 }
 
 /**
- * Orbit AI request limits per signed-in user: at most [REQUESTS_PER_WINDOW] requests in any
+ * OrbitNova AI request limits per signed-in user: at most [REQUESTS_PER_WINDOW] requests in any
  * rolling [WINDOW_MS] period, and [TOTAL_REQUESTS] in total, after which the user is asked to
  * contact the developer. Every message the user sends counts once (automatic retries don't).
  */

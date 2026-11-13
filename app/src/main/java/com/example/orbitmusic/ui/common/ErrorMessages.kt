@@ -21,6 +21,7 @@ fun AppError.messageRes(): Int = when (this) {
     AppError.PlayServicesUnavailable -> R.string.error_play_services
     AppError.ConsentDenied -> R.string.error_consent_denied
     AppError.AuthorizationRequired -> R.string.error_authorization_required
+    AppError.NoYouTubeChannel -> R.string.error_no_youtube_channel
     AppError.AiNotConfigured -> R.string.error_ai_not_configured
     AppError.AiInvalidKey -> R.string.error_ai_invalid_key
     is AppError.AiRateLimited -> R.string.error_ai_busy

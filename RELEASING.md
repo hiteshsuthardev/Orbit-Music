@@ -1,6 +1,6 @@
-# Releasing Orbit Music (self-hosted updates)
+# Releasing OrbitNova Music (self-hosted updates)
 
-Orbit Music is distributed outside Google Play. Each release is a **GitHub Release** with two
+OrbitNova Music is distributed outside Google Play. Each release is a **GitHub Release** with two
 files, and the app updates itself from them:
 
 | File | What it is |
@@ -38,7 +38,7 @@ Console → *APIs & Services → Credentials*, add another **Android** OAuth cli
 (You can print it again with
 `keytool -list -v -keystore keystore/orbit-music-release.jks -alias orbit-music`.)
 
-### 3. Orbit AI in release builds
+### 3. OrbitNova AI in release builds
 Release builds never contain the Groq key. They call a Cloudflare Worker (`proxy/orbit-ai-worker.js`,
 deployed as `orbit-ai`) that adds the key and forwards the request to Groq.
 
@@ -48,7 +48,7 @@ deployed as `orbit-ai`) that adds the key and forwards the request to Groq.
 - To change the worker code, paste the file again in Cloudflare → *Edit code* → *Deploy*.
 
 The token ships inside the APK, so it only keeps casual callers out; per-user limits are in the app.
-Without `AI_PROXY_URL`, Orbit AI shows "not set up" in release builds.
+Without `AI_PROXY_URL`, OrbitNova AI shows "not set up" in release builds.
 
 ### 4. Moving from a debug install
 A release APK can't update an app installed from a **debug** APK (different signing keys).
@@ -93,7 +93,7 @@ With the GitHub CLI:
 
 ```bash
 gh release create v1.6.0 app/build/release-upload/orbit-music.apk app/build/release-upload/version.json \
-  --title "Orbit Music 1.6.0" --notes "What changed for users"
+  --title "OrbitNova Music 1.6.0" --notes "What changed for users"
 ```
 
 Then commit and push `version.properties` so the next bump starts from the right number.
@@ -113,7 +113,7 @@ Open the app on a phone with the previous version and tap **Profile → Check fo
   blocking screen that only offers updating.
 - Downloads over HTTPS only, with progress and **Cancel download**. Checks free storage first,
   then verifies the SHA-256 before installing. A mismatching file is deleted.
-- The first time, Android asks the user to allow installs from Orbit Music; the app explains
+- The first time, Android asks the user to allow installs from OrbitNova Music; the app explains
   why and opens the right settings screen.
 - If the user backs out of the installer, the app offers **Install** again. Downloaded APKs
   are cleaned up once the new version is running.
@@ -129,7 +129,7 @@ release:
 
 ```json
 {
-  "announcement_text": "New: ask Orbit AI for a playlist from the middle button!",
+  "announcement_text": "New: ask OrbitNova AI for a playlist from the middle button!",
   "feature_ai_enabled": true,
   "ai_model": ""
 }
@@ -138,7 +138,7 @@ release:
 | Key | Effect |
 | --- | --- |
 | `announcement_text` | Shown as a closable banner on Home (empty = none). A new text shows again for everyone. |
-| `feature_ai_enabled` | `false` hides the Orbit AI button. |
+| `feature_ai_enabled` | `false` hides the OrbitNova AI button. |
 | `ai_model` | Overrides the AI model name (empty = use the built-in one). |
 
 The app caches the last good copy and uses it offline. The file is public: **never put API

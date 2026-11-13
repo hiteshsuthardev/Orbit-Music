@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Orbit Music"
+rootProject.name = "OrbitNova Music"
 include(":app")
  

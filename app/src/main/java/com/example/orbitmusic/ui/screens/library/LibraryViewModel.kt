@@ -180,12 +180,8 @@ class LibraryViewModel @Inject constructor(
     fun onCreatePlaylist(title: String, privacy: PlaylistPrivacy) {
         if (createSheet.value?.isCreating == true) return
         createSheet.value = CreatePlaylistUiState(isCreating = true)
-        val canEdit = (authState.value as? AuthState.SignedIn)?.canEditPlaylists == true
         viewModelScope.launch {
-            if (canEdit) {
-                create(title, privacy)
-                return@launch
-            }
+            // Silent when the write scope is still granted; returns a token that has it.
             when (val outcome = requestPlaylistEditAccess()) {
                 AuthorizationOutcome.Granted -> create(title, privacy)
                 is AuthorizationOutcome.NeedsConsent -> {

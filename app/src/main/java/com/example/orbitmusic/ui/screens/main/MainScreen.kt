@@ -93,7 +93,7 @@ import com.example.orbitmusic.ui.screens.songactions.SongActionsViewModel
 /** Tab order matches [rememberOrbitBottomBarItems]. */
 private val tabRoutes: List<Any> = listOf(HomeRoute, SearchRoute, LibraryRoute, SettingsRoute)
 
-/** selectedIndex value while the centre Orbit AI button is the current destination. */
+/** selectedIndex value while the centre OrbitNova AI button is the current destination. */
 private const val ORBIT_AI_SELECTED = -1
 
 /** Bar content + its 1dp top divider (the navigation-bar inset is added separately). */
@@ -115,7 +115,7 @@ fun MainScreen() {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Leave Orbit AI if it gets switched off remotely while open.
+    // Leave OrbitNova AI if it gets switched off remotely while open.
     LaunchedEffect(aiEnabled) {
         if (!aiEnabled && backStackEntry?.destination?.hasRoute(OrbitAiRoute::class) == true) {
             navController.navigateToTab(HomeRoute)
@@ -248,7 +248,7 @@ fun MainScreen() {
             Column(modifier = Modifier.align(Alignment.BottomCenter)) {
                 SnackbarHost(
                     snackbarHostState,
-                    // Above the mini player, or at least above the raised Orbit AI button.
+                    // Above the mini player, or at least above the raised OrbitNova AI button.
                     Modifier.padding(start = 8.dp, end = 8.dp, bottom = maxOf(miniPlayerSpace, OrbitBottomBarCenterRaise)),
                 ) { data ->
                     Snackbar(
@@ -267,7 +267,7 @@ fun MainScreen() {
                         selectedIndex = index
                         navController.navigateToTab(tabRoutes[index])
                     },
-                    // Orbit AI can be switched off remotely; its button then disappears.
+                    // OrbitNova AI can be switched off remotely; its button then disappears.
                     center = if (aiEnabled) {
                         OrbitBottomBarCenter(
                             label = stringResource(R.string.nav_orbit_ai),
@@ -311,7 +311,7 @@ fun MainScreen() {
 }
 
 /** Gap between the mini player and the bottom bar. */
-/** The mini player floats above the bar's raised Orbit AI button, with an 8dp gap. */
+/** The mini player floats above the bar's raised OrbitNova AI button, with an 8dp gap. */
 private val MiniPlayerGap = OrbitBottomBarCenterRaise + 8.dp
 
 @Composable

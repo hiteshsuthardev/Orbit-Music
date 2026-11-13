@@ -27,7 +27,7 @@ import javax.inject.Singleton
 import kotlin.math.ceil
 
 /**
- * Orbit AI on Groq's OpenAI-compatible chat completions API.
+ * OrbitNova AI on Groq's OpenAI-compatible chat completions API.
  *
  * - Asks for structured output (json_schema). If the model rejects that (HTTP 400 mentioning
  *   the response format), it switches to {"type": "json_object"} for the rest of the session.

@@ -25,7 +25,7 @@ data object SearchRoute
 @Serializable
 data object LibraryRoute
 
-/** Orbit AI chat, opened from the raised centre button of the bottom bar. */
+/** OrbitNova AI chat, opened from the raised centre button of the bottom bar. */
 @Serializable
 data object OrbitAiRoute
 

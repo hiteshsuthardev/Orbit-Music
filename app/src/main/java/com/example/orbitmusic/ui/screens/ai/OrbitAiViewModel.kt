@@ -15,13 +15,12 @@ import com.example.orbitmusic.domain.ai.SaveAiPlaylistResult
 import com.example.orbitmusic.domain.ai.SaveAiPlaylistUseCase
 import com.example.orbitmusic.domain.model.AiPlaylist
 import com.example.orbitmusic.domain.model.AppError
-import com.example.orbitmusic.domain.model.AuthState
 import com.example.orbitmusic.domain.model.AuthorizationOutcome
 import com.example.orbitmusic.domain.model.Playlist
 import com.example.orbitmusic.domain.model.Resource
 import com.example.orbitmusic.domain.usecase.auth.CompleteAuthorizationUseCase
-import com.example.orbitmusic.domain.usecase.auth.ObserveAuthStateUseCase
 import com.example.orbitmusic.domain.usecase.auth.RequestPlaylistEditAccessUseCase
+import com.example.orbitmusic.domain.usecase.playlist.SaveAiPlaylistToOrbitNovaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -36,7 +35,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** One line of the Orbit AI conversation. */
+/** One line of the OrbitNova AI conversation. */
 sealed interface AiChatEntry {
     val id: Int
 
@@ -44,7 +43,7 @@ sealed interface AiChatEntry {
     data class Answer(override val id: Int, val playlist: AiPlaylist) : AiChatEntry
 }
 
-/** Saving one answer to YouTube as a playlist. */
+/** Saving one answer as a playlist (to YouTube or in OrbitNova). */
 sealed interface YouTubeSave {
     data class Saving(val done: Int, val total: Int) : YouTubeSave
     data class Saved(val playlist: Playlist, val added: Int, val missing: Int) : YouTubeSave
@@ -68,6 +67,8 @@ data class OrbitAiUiState(
     val allowance: AiAllowance? = null,
     /** "Add to YouTube" progress per answer id. */
     val saves: Map<Int, YouTubeSave> = emptyMap(),
+    /** "Add to OrbitNova" progress per answer id. */
+    val localSaves: Map<Int, YouTubeSave> = emptyMap(),
 ) {
     val isWorking: Boolean get() = session is OrbitAiState.Thinking || session is OrbitAiState.Busy
 }
@@ -79,12 +80,11 @@ class OrbitAiViewModel @Inject constructor(
     private val feeder: AiQueueFeeder,
     private val gate: AiRequestGate,
     private val savePlaylist: SaveAiPlaylistUseCase,
-    observeAuthState: ObserveAuthStateUseCase,
+    private val saveToOrbitNovaUseCase: SaveAiPlaylistToOrbitNovaUseCase,
     private val requestPlaylistEditAccess: RequestPlaylistEditAccessUseCase,
     private val completeAuthorization: CompleteAuthorizationUseCase,
 ) : ViewModel() {
 
-    private val authState = observeAuthState()
     private val _events = Channel<OrbitAiEvent>(Channel.BUFFERED)
     val events: Flow<OrbitAiEvent> = _events.receiveAsFlow()
 
@@ -144,7 +144,7 @@ class OrbitAiViewModel @Inject constructor(
         request?.cancel()
         session.reset()
         lastRequest = null
-        local.update { it.copy(entries = emptyList(), playbackError = null, saves = emptyMap()) }
+        local.update { it.copy(entries = emptyList(), playbackError = null, saves = emptyMap(), localSaves = emptyMap()) }
     }
 
     /** Plays an answer from [startIndex]; each song is looked up on YouTube only when reached. */
@@ -172,10 +172,7 @@ class OrbitAiViewModel @Inject constructor(
         if (local.value.saves[answer.id].let { it is YouTubeSave.Saving || it is YouTubeSave.Saved }) return
         setSave(answer.id, YouTubeSave.Saving(0, answer.playlist.songs.size))
         viewModelScope.launch {
-            if ((authState.value as? AuthState.SignedIn)?.canEditPlaylists == true) {
-                save(answer, fallbackName)
-                return@launch
-            }
+            // Silent when the write scope is still granted; returns a token that has it.
             when (val outcome = requestPlaylistEditAccess()) {
                 AuthorizationOutcome.Granted -> save(answer, fallbackName)
                 is AuthorizationOutcome.NeedsConsent -> {
@@ -186,6 +183,27 @@ class OrbitAiViewModel @Inject constructor(
             }
         }
     }
+
+    /** Saves [answer] as a playlist in OrbitNova itself (on this device, no YouTube account changes). */
+    fun saveToOrbitNova(answer: AiChatEntry.Answer, fallbackName: String) {
+        if (local.value.localSaves[answer.id].let { it is YouTubeSave.Saving || it is YouTubeSave.Saved }) return
+        setLocalSave(answer.id, YouTubeSave.Saving(0, answer.playlist.songs.size))
+        viewModelScope.launch {
+            val result = saveToOrbitNovaUseCase(answer.playlist, fallbackName) { done, total ->
+                setLocalSave(answer.id, YouTubeSave.Saving(done, total))
+            }
+            setLocalSave(
+                answer.id,
+                when (result) {
+                    is SaveAiPlaylistResult.Saved -> YouTubeSave.Saved(result.playlist, result.added, result.missing)
+                    is SaveAiPlaylistResult.Failed -> YouTubeSave.Failed(result.error)
+                },
+            )
+        }
+    }
+
+    private fun setLocalSave(answerId: Int, save: YouTubeSave) =
+        local.update { it.copy(localSaves = it.localSaves + (answerId to save)) }
 
     fun onConsentResult(resultCode: Int, data: Intent?) {
         val (answer, fallbackName) = pendingSave ?: return

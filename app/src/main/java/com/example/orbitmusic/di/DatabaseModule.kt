@@ -54,7 +54,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): OrbitDatabase =
         Room.databaseBuilder(context, OrbitDatabase::class.java, OrbitDatabase.NAME)
-            .addMigrations(OrbitDatabase.MIGRATION_1_2)
+            .addMigrations(OrbitDatabase.MIGRATION_1_2, OrbitDatabase.MIGRATION_2_3)
             .build()
 
     @Provides fun provideSongDao(db: OrbitDatabase): SongDao = db.songDao()

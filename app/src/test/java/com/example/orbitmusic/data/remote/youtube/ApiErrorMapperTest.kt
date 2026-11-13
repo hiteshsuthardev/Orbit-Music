@@ -33,6 +33,7 @@ class ApiErrorMapperTest {
     @Test
     fun `status codes map to friendly errors`() {
         assertEquals(AppError.AuthorizationRequired, mapper.mapStatus(401, emptyList()))
+        assertEquals(AppError.NoYouTubeChannel, mapper.mapStatus(401, listOf("youtubeSignupRequired")))
         assertEquals(AppError.NotFound, mapper.mapStatus(404, listOf("playlistNotFound")))
         assertEquals(AppError.VideoUnavailable, mapper.mapStatus(403, listOf("videoNotFound")))
         assertTrue(mapper.mapStatus(503, emptyList()) is AppError.Unknown)

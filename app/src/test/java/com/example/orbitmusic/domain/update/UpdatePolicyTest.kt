@@ -92,9 +92,9 @@ class UpdatePolicyTest {
         val json = Json { ignoreUnknownKeys = true }
         val config = json.decodeFromString(
             RemoteConfigDto.serializer(),
-            """{"announcement_text": " New: Orbit AI! ", "feature_ai_enabled": false, "ai_model": ""}""",
+            """{"announcement_text": " New: OrbitNova AI! ", "feature_ai_enabled": false, "ai_model": ""}""",
         ).toRemoteConfig()
-        assertEquals("New: Orbit AI!", config.announcementText)
+        assertEquals("New: OrbitNova AI!", config.announcementText)
         assertFalse(config.featureAiEnabled)
         assertNull(config.aiModel)
         assertTrue(json.decodeFromString(RemoteConfigDto.serializer(), "{}").toRemoteConfig().featureAiEnabled)

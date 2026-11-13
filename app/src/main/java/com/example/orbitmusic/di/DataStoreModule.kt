@@ -33,7 +33,7 @@ annotation class SessionDataStore
 @Retention(AnnotationRetention.BINARY)
 annotation class PlaybackSessionDataStore
 
-/** Orbit AI request counts per user. Kept on sign-out and included in backups. */
+/** OrbitNova AI request counts per user. Kept on sign-out and included in backups. */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class AiUsageDataStore

@@ -36,7 +36,7 @@ private const val SHORTS_MAX_MS = 60_000L
 private val ShortsTag = Regex("#shorts?\\b", RegexOption.IGNORE_CASE)
 
 /**
- * Orbit Music only plays music videos: the YouTube "Music" category, longer than a minute,
+ * OrbitNova Music only plays music videos: the YouTube "Music" category, longer than a minute,
  * not live, and not tagged as a Short. Everything else never enters the app.
  */
 fun VideoDto.isMusicVideo(): Boolean {

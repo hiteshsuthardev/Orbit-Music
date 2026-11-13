@@ -84,7 +84,7 @@ object NetworkModule {
         .build()
         .create(YouTubeApi::class.java)
 
-    /** Orbit AI endpoint, model and (debug only) key, from BuildConfig. */
+    /** OrbitNova AI endpoint, model and (debug only) key, from BuildConfig. */
     @Provides
     @Singleton
     fun provideAiConfig(): AiConfig = AiConfig(
@@ -96,7 +96,7 @@ object NetworkModule {
     )
 
     /**
-     * Orbit AI client, separate from the YouTube one: 30s timeouts, and the Groq key (debug
+     * OrbitNova AI client, separate from the YouTube one: 30s timeouts, and the Groq key (debug
      * builds only) added as the Authorization header. Debug logging comes from
      * [BuildTypeInterceptors], which redacts the Authorization header and never logs bodies.
      */

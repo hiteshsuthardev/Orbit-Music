@@ -44,6 +44,7 @@ class ApiErrorMapper @Inject constructor(
     /** Visible for tests. */
     fun mapStatus(code: Int, reasons: List<String>): AppError = when {
         reasons.any { it in QUOTA_REASONS } -> AppError.QuotaExceeded
+        reasons.any { it == NO_CHANNEL_REASON } -> AppError.NoYouTubeChannel
         code == 401 -> AppError.AuthorizationRequired
         code == 403 && reasons.any { it in PERMISSION_REASONS } -> AppError.PermissionRequired
         code == 403 && reasons.any { it in UNAVAILABLE_REASONS } -> AppError.VideoUnavailable
@@ -53,10 +54,12 @@ class ApiErrorMapper @Inject constructor(
         else -> AppError.Unknown("HTTP $code")
     }
 
-    private companion object {
-        val QUOTA_REASONS = setOf("quotaExceeded", "dailyLimitExceeded", "rateLimitExceeded", "userRateLimitExceeded")
-        val PERMISSION_REASONS = setOf("insufficientPermissions", "forbidden", "playlistForbidden", "channelClosed")
-        val UNAVAILABLE_REASONS = setOf("videoNotFound", "videoRatingDisabled", "playlistItemsNotAccessible")
+    companion object {
+        /** 401 for accounts without a YouTube channel; signing in again doesn't help. */
+        const val NO_CHANNEL_REASON = "youtubeSignupRequired"
+        private val QUOTA_REASONS = setOf("quotaExceeded", "dailyLimitExceeded", "rateLimitExceeded", "userRateLimitExceeded")
+        private val PERMISSION_REASONS = setOf("insufficientPermissions", "forbidden", "playlistForbidden", "channelClosed")
+        private val UNAVAILABLE_REASONS = setOf("videoNotFound", "videoRatingDisabled", "playlistItemsNotAccessible")
     }
 }
 

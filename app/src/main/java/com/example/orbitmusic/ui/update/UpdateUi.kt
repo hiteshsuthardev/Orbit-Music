@@ -301,7 +301,7 @@ private val previewUpdate = AppUpdate(
     sha256 = "0".repeat(64),
     minVersionCode = 1,
     forceUpdate = false,
-    notes = "• Orbit AI remembers your favourite moods\n• Faster search\n• Bug fixes",
+    notes = "• OrbitNova AI remembers your favourite moods\n• Faster search\n• Bug fixes",
 )
 
 @OrbitPreviews
