@@ -48,7 +48,7 @@ class SaveAiPlaylistUseCaseTest {
 
     @Test
     fun createsPrivatePlaylistAndAddsMatchedSongs() = runTest {
-        coEvery { playlists.createPlaylist("Gym", "Loud\n\nMade with Orbit AI", PlaylistPrivacy.Private) } returns
+        coEvery { playlists.createPlaylist("Gym", "Loud\n\nMade with OrbitNova AI", PlaylistPrivacy.Private) } returns
             Resource.Success(created)
         coEvery { playlists.addSongToPlaylist("PL1", any()) } returns Resource.Success(Unit)
         searchFinds("One A", song("v1", "One"))

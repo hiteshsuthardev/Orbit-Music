@@ -16,14 +16,14 @@ sealed interface OrbitAiState {
     data object Idle : OrbitAiState
     data object Thinking : OrbitAiState
 
-    /** Rate limited: "Orbit AI is busy, retrying in [secondsLeft] seconds". */
+    /** Rate limited: "OrbitNova AI is busy, retrying in [secondsLeft] seconds". */
     data class Busy(val secondsLeft: Int) : OrbitAiState
     data class Ready(val playlist: AiPlaylist) : OrbitAiState
     data class Failed(val error: AppError) : OrbitAiState
 }
 
 /**
- * One Orbit AI conversation (create one per screen). Keeps the last few messages so
+ * One OrbitNova AI conversation (create one per screen). Keeps the last few messages so
  * follow-ups like "remove the slow ones" or "add 10 more" refer to the previous answer, and
  * waits out rate limits: on HTTP 429 it counts down the Retry-After seconds, then retries
  * (up to [MAX_RATE_LIMIT_RETRIES] times) before reporting the error.

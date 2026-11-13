@@ -128,7 +128,12 @@ class AuthRepositoryImpl @Inject constructor(
                 runCatching { authorizationDataSource.clearToken(cached) }
             }
             val scopes = session.grantedScopes.ifEmpty { listOf(YouTubeScopes.READ_ONLY) }
-            val result = authorizationDataSource.authorize(scopes, session.email)
+            var result = authorizationDataSource.authorize(scopes, session.email)
+            if (result.hasResolution() && scopes != listOf(YouTubeScopes.READ_ONLY)) {
+                // Playlist editing can't be renewed silently: keep the app working with read
+                // access. Saving a playlist asks for the edit permission again.
+                result = authorizationDataSource.authorize(listOf(YouTubeScopes.READ_ONLY), session.email)
+            }
             if (result.hasResolution()) {
                 // Access was revoked or needs re-consent: this cannot be done silently.
                 sessionStore.update {
@@ -170,7 +175,9 @@ class AuthRepositoryImpl @Inject constructor(
             existing?.copy(
                 accessToken = token,
                 tokenExpiresAtMillis = expiresAt,
-                grantedScopes = (existing.grantedScopes + result.grantedScopes).distinct(),
+                // Only what this token really carries, so a read-only renewal never looks
+                // like it can still edit playlists.
+                grantedScopes = result.grantedScopes.ifEmpty { existing.grantedScopes },
                 reauthorizationRequired = false,
             )
         }

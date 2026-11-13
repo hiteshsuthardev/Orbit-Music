@@ -1,7 +1,7 @@
 /**
- * Orbit AI proxy (Cloudflare Worker).
+ * OrbitNova AI proxy (Cloudflare Worker).
  *
- * Release builds of Orbit Music don't contain the Groq API key. They send their chat request
+ * Release builds of OrbitNova Music don't contain the Groq API key. They send their chat request
  * here; this worker adds the key and forwards it to Groq, then returns Groq's answer unchanged.
  *
  * Secrets (Cloudflare → Worker → Settings → Variables and Secrets, type "Secret"):

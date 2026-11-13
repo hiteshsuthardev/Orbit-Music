@@ -11,6 +11,9 @@ import com.example.orbitmusic.data.local.db.entity.ChannelEntity
 import com.example.orbitmusic.data.local.db.entity.CollectionItemEntity
 import com.example.orbitmusic.data.local.db.entity.FavoriteEntity
 import com.example.orbitmusic.data.local.db.entity.HistoryEntity
+import com.example.orbitmusic.data.local.db.entity.LocalPlaylistEntity
+import com.example.orbitmusic.data.local.db.entity.LocalPlaylistRow
+import com.example.orbitmusic.data.local.db.entity.LocalPlaylistSongEntity
 import com.example.orbitmusic.data.local.db.entity.PlaylistEntity
 import com.example.orbitmusic.data.local.db.entity.SearchHistoryEntity
 import com.example.orbitmusic.data.local.db.entity.SongEntity
@@ -209,4 +212,65 @@ interface ChannelDao {
 
     @Query("SELECT * FROM channels WHERE isMine = 1 LIMIT 1")
     fun observeMine(): Flow<ChannelEntity?>
+}
+
+private const val LOCAL_PLAYLIST_ROW =
+    "SELECT p.*, " +
+        "(SELECT COUNT(*) FROM local_playlist_songs ls WHERE ls.playlistId = p.id) AS itemCount, " +
+        "(SELECT s.thumbnailUrl FROM local_playlist_songs ls INNER JOIN songs s ON s.videoId = ls.videoId " +
+        "WHERE ls.playlistId = p.id ORDER BY ls.position LIMIT 1) AS thumbnailUrl " +
+        "FROM local_playlists p"
+
+@Dao
+abstract class LocalPlaylistDao {
+    @Query("$LOCAL_PLAYLIST_ROW ORDER BY p.updatedAt DESC")
+    abstract fun observeAll(): Flow<List<LocalPlaylistRow>>
+
+    @Query("$LOCAL_PLAYLIST_ROW WHERE p.id = :id")
+    abstract fun observeById(id: String): Flow<LocalPlaylistRow?>
+
+    @Query("SELECT * FROM local_playlists WHERE id = :id")
+    abstract suspend fun getById(id: String): LocalPlaylistEntity?
+
+    @Query(
+        "SELECT s.* FROM local_playlist_songs ls INNER JOIN songs s ON s.videoId = ls.videoId " +
+            "WHERE ls.playlistId = :id ORDER BY ls.position",
+    )
+    abstract fun observeSongs(id: String): Flow<List<SongEntity>>
+
+    @Query(
+        "SELECT s.* FROM local_playlist_songs ls INNER JOIN songs s ON s.videoId = ls.videoId " +
+            "WHERE ls.playlistId = :id ORDER BY ls.position",
+    )
+    abstract suspend fun getSongs(id: String): List<SongEntity>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM local_playlist_songs WHERE playlistId = :id AND videoId = :videoId)")
+    abstract suspend fun contains(id: String, videoId: String): Boolean
+
+    @Query("SELECT COALESCE(MAX(position) + 1, 0) FROM local_playlist_songs WHERE playlistId = :id")
+    abstract suspend fun nextPosition(id: String): Int
+
+    @Upsert
+    abstract suspend fun upsert(playlist: LocalPlaylistEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insertSongs(songs: List<LocalPlaylistSongEntity>)
+
+    @Query("UPDATE local_playlists SET youTubePlaylistId = :youTubeId, updatedAt = :now WHERE id = :id")
+    abstract suspend fun link(id: String, youTubeId: String, now: Long)
+
+    @Query("UPDATE local_playlists SET updatedAt = :now WHERE id = :id")
+    abstract suspend fun touch(id: String, now: Long)
+
+    @Query("DELETE FROM local_playlist_songs WHERE playlistId = :id")
+    abstract suspend fun deleteSongs(id: String)
+
+    @Query("DELETE FROM local_playlists WHERE id = :id")
+    abstract suspend fun deletePlaylist(id: String)
+
+    @Transaction
+    open suspend fun delete(id: String) {
+        deleteSongs(id)
+        deletePlaylist(id)
+    }
 }

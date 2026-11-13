@@ -171,7 +171,7 @@ class ApkInstaller @Inject constructor(
     /** Android 8+ asks the user once to allow installs from this app. */
     fun canInstall(): Boolean = context.packageManager.canRequestPackageInstalls()
 
-    /** Settings screen where the user allows Orbit Music to install updates. */
+    /** Settings screen where the user allows OrbitNova Music to install updates. */
     fun allowInstallsIntent(): Intent =
         Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, "package:${context.packageName}".toUri())
 

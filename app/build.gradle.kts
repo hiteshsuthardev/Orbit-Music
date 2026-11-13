@@ -51,12 +51,12 @@ android {
 
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${secret("GOOGLE_WEB_CLIENT_ID")}\"")
         buildConfigField("String", "YOUTUBE_API_KEY", "\"${secret("YOUTUBE_API_KEY")}\"")
-        // Shown on the "Orbit AI limit reached" screen; blank hides the email button.
+        // Shown on the "OrbitNova AI limit reached" screen; blank hides the email button.
         buildConfigField("String", "DEVELOPER_CONTACT_EMAIL", "\"${secret("DEVELOPER_CONTACT_EMAIL")}\"")
         // Self-hosted updates and remote config (HTTPS only; never secrets in these files).
         buildConfigField("String", "UPDATE_JSON_URL", "\"${secret("UPDATE_JSON_URL")}\"")
         buildConfigField("String", "REMOTE_CONFIG_URL", "\"${secret("REMOTE_CONFIG_URL")}\"")
-        // Orbit AI (Groq). The model name is not secret.
+        // OrbitNova AI (Groq). The model name is not secret.
         buildConfigField("String", "GROQ_MODEL", "\"${secret("GROQ_MODEL")}\"")
     }
 
@@ -219,7 +219,7 @@ tasks.register("bumpVersion") {
             .replace(Regex("(?m)^VERSION_CODE=.*$"), "VERSION_CODE=$code")
             .replace(Regex("(?m)^VERSION_NAME=.*$"), "VERSION_NAME=$name")
         file.writeText(text)
-        println("Orbit Music version is now $name ($code)")
+        println("OrbitNova Music version is now $name ($code)")
     }
 }
 

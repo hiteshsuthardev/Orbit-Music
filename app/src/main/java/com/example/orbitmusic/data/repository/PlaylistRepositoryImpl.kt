@@ -6,6 +6,9 @@ import com.example.orbitmusic.data.local.db.entity.CacheMetadataEntity
 import com.example.orbitmusic.data.local.db.entity.CollectionItemEntity
 import com.example.orbitmusic.data.local.db.entity.CollectionItemType
 import com.example.orbitmusic.data.local.db.entity.CollectionKeys
+import com.example.orbitmusic.data.local.db.entity.LocalPlaylistEntity
+import com.example.orbitmusic.data.local.db.entity.LocalPlaylistRow
+import com.example.orbitmusic.data.local.db.entity.LocalPlaylistSongEntity
 import com.example.orbitmusic.data.local.db.entity.SongEntity
 import com.example.orbitmusic.data.mapper.toDomain
 import com.example.orbitmusic.data.mapper.toEntity
@@ -32,9 +35,12 @@ import com.example.orbitmusic.domain.model.Song
 import com.example.orbitmusic.domain.repository.PlaylistRepository
 import com.example.orbitmusic.util.TimeProvider
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import retrofit2.HttpException
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -52,12 +58,16 @@ class PlaylistRepositoryImpl @Inject constructor(
     private val playlistDao = db.playlistDao()
     private val collectionDao = db.collectionDao()
     private val metadataDao = db.cacheMetadataDao()
+    private val localDao = db.localPlaylistDao()
     private val locks = KeyedMutex()
 
     // My playlists ---------------------------------------------------------------------
 
-    override fun observeMyPlaylists(): Flow<List<Playlist>> =
-        collectionDao.observePlaylists(CollectionKeys.MY_PLAYLISTS).map { it.toPlaylists() }
+    /** OrbitNova playlists (newest first), then the YouTube ones. */
+    override fun observeMyPlaylists(): Flow<List<Playlist>> = combine(
+        localDao.observeAll(),
+        collectionDao.observePlaylists(CollectionKeys.MY_PLAYLISTS),
+    ) { local, youTube -> local.map { it.toDomain() } + youTube.toPlaylists() }
 
     override suspend fun refreshMyPlaylists(force: Boolean): Resource<Unit> =
         locks.withLock(CollectionKeys.MY_PLAYLISTS) {
@@ -104,17 +114,33 @@ class PlaylistRepositoryImpl @Inject constructor(
     // Playlist detail ------------------------------------------------------------------
 
     override fun observePlaylist(playlistId: String): Flow<Playlist?> =
-        playlistDao.observeById(playlistId).map { it?.toDomain() }
+        if (Playlist.isLocalId(playlistId)) {
+            localDao.observeById(playlistId).map { it?.toDomain() }
+        } else {
+            playlistDao.observeById(playlistId).map { it?.toDomain() }
+        }
 
     override fun observePlaylistSongs(playlistId: String): Flow<List<Song>> =
-        collectionDao.observeSongs(CollectionKeys.playlist(playlistId)).map { it.toSongs() }
+        if (Playlist.isLocalId(playlistId)) {
+            localDao.observeSongs(playlistId).map { it.toSongs() }
+        } else {
+            collectionDao.observeSongs(CollectionKeys.playlist(playlistId)).map { it.toSongs() }
+        }
 
     override fun observePlaylistHasMore(playlistId: String): Flow<Boolean> =
-        metadataDao.observe(CollectionKeys.playlist(playlistId))
-            .map { it?.nextPageToken != null }
-            .distinctUntilChanged()
+        if (Playlist.isLocalId(playlistId)) {
+            flowOf(false)
+        } else {
+            metadataDao.observe(CollectionKeys.playlist(playlistId))
+                .map { it?.nextPageToken != null }
+                .distinctUntilChanged()
+        }
 
     override suspend fun refreshPlaylist(playlistId: String, force: Boolean): Resource<Unit> {
+        // OrbitNova playlists live on the device: nothing to fetch.
+        if (Playlist.isLocalId(playlistId)) {
+            return if (localDao.getById(playlistId) != null) Resource.Success(Unit) else Resource.Error(AppError.NotFound)
+        }
         val key = CollectionKeys.playlist(playlistId)
         return locks.withLock(key) {
             val cached = playlistDao.getById(playlistId) != null
@@ -138,6 +164,7 @@ class PlaylistRepositoryImpl @Inject constructor(
     }
 
     override suspend fun loadMorePlaylistItems(playlistId: String): Resource<Boolean> {
+        if (Playlist.isLocalId(playlistId)) return Resource.Success(false)
         val key = CollectionKeys.playlist(playlistId)
         return locks.withLock(key) { loadNextPageLocked(playlistId, key) }
     }
@@ -159,6 +186,9 @@ class PlaylistRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getAllPlaylistSongs(playlistId: String, maxItems: Int): Resource<List<Song>> {
+        if (Playlist.isLocalId(playlistId)) {
+            return Resource.Success(localDao.getSongs(playlistId).take(maxItems).toSongs())
+        }
         val key = CollectionKeys.playlist(playlistId)
         val refresh = refreshPlaylist(playlistId, force = false)
         if (refresh is Resource.Error && collectionDao.count(key) == 0) return refresh
@@ -203,6 +233,7 @@ class PlaylistRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addSongToPlaylist(playlistId: String, song: Song): Resource<Unit> {
+        if (Playlist.isLocalId(playlistId)) return addSongToLocalPlaylist(playlistId, song)
         val result = errorMapper.safeCall {
             api.addPlaylistItem(
                 PlaylistItemInsertRequestDto(
@@ -228,6 +259,60 @@ class PlaylistRepositoryImpl @Inject constructor(
             Resource.Loading -> Resource.Loading
         }
     }
+
+    // OrbitNova (local) playlists -------------------------------------------------------
+
+    override suspend fun createLocalPlaylist(title: String, description: String, songs: List<Song>): Playlist {
+        val now = timeProvider.currentTimeMillis()
+        val id = Playlist.LOCAL_ID_PREFIX + UUID.randomUUID()
+        val unique = songs.distinctBy { it.videoId }
+        db.withTransaction {
+            songDao.upsertAll(unique.map { it.toEntity(now) })
+            localDao.upsert(
+                LocalPlaylistEntity(
+                    id = id,
+                    title = title.trim(),
+                    description = description.trim(),
+                    createdAt = now,
+                    updatedAt = now,
+                    youTubePlaylistId = null,
+                ),
+            )
+            localDao.insertSongs(unique.mapIndexed { index, song -> LocalPlaylistSongEntity(id, index, song.videoId) })
+        }
+        return LocalPlaylistRow(localDao.getById(id)!!, unique.size, unique.firstOrNull()?.thumbnailUrl).toDomain()
+    }
+
+    private suspend fun addSongToLocalPlaylist(playlistId: String, song: Song): Resource<Unit> {
+        if (localDao.getById(playlistId) == null) return Resource.Error(AppError.NotFound)
+        val now = timeProvider.currentTimeMillis()
+        db.withTransaction {
+            if (songDao.getById(song.videoId) == null) songDao.upsertAll(listOf(song.toEntity(now)))
+            if (!localDao.contains(playlistId, song.videoId)) {
+                localDao.insertSongs(listOf(LocalPlaylistSongEntity(playlistId, localDao.nextPosition(playlistId), song.videoId)))
+                localDao.touch(playlistId, now)
+            }
+        }
+        return Resource.Success(Unit)
+    }
+
+    override suspend fun linkToYouTube(localId: String, youTubeId: String) {
+        localDao.link(localId, youTubeId, timeProvider.currentTimeMillis())
+    }
+
+    override suspend fun deleteLocalPlaylist(localId: String) {
+        if (Playlist.isLocalId(localId)) localDao.delete(localId)
+    }
+
+    private fun LocalPlaylistRow.toDomain() = Playlist(
+        id = playlist.id,
+        title = playlist.title,
+        description = playlist.description,
+        thumbnailUrl = thumbnailUrl,
+        itemCount = itemCount,
+        ownerName = LOCAL_OWNER,
+        linkedYouTubeId = playlist.youTubePlaylistId,
+    )
 
     // Helpers ----------------------------------------------------------------------------
 
@@ -285,3 +370,6 @@ class PlaylistRepositoryImpl @Inject constructor(
 }
 
 private const val HTTP_NOT_FOUND = 404
+
+/** Shown as the "owner" of playlists stored in the app. */
+private const val LOCAL_OWNER = "OrbitNova"

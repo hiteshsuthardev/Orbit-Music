@@ -41,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.LibraryAdd
 import androidx.compose.material.icons.rounded.MarkEmailUnread
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Shuffle
@@ -151,6 +152,7 @@ fun OrbitAiScreen(
             onShuffle = { answer -> viewModel.play(answer, shuffle = true) },
             onDismissPlaybackError = viewModel::dismissPlaybackError,
             onSaveToYouTube = viewModel::saveToYouTube,
+            onSaveToOrbitNova = viewModel::saveToOrbitNova,
             onOpenPlaylist = onOpenPlaylist,
             onContactDeveloper = {
                 val email = Intent(Intent.ACTION_SENDTO, "mailto:".toUri()).apply {
@@ -172,12 +174,13 @@ internal class OrbitAiCallbacks(
     val onShuffle: (AiChatEntry.Answer) -> Unit,
     val onDismissPlaybackError: () -> Unit,
     val onSaveToYouTube: (AiChatEntry.Answer, String) -> Unit,
+    val onSaveToOrbitNova: (AiChatEntry.Answer, String) -> Unit,
     val onOpenPlaylist: (Playlist) -> Unit,
     val onContactDeveloper: () -> Unit,
 )
 
 /**
- * Orbit AI chat: describe a mood or moment, get a playlist card back, play or shuffle it,
+ * OrbitNova AI chat: describe a mood or moment, get a playlist card back, play or shuffle it,
  * and refine it with follow-ups ("remove the slow ones", "add 10 more").
  */
 @Composable
@@ -255,6 +258,8 @@ internal fun OrbitAiContent(
                                 onShuffle = { callbacks.onShuffle(entry) },
                                 save = state.saves[entry.id],
                                 onSave = { fallbackName -> callbacks.onSaveToYouTube(entry, fallbackName) },
+                                localSave = state.localSaves[entry.id],
+                                onSaveLocal = { fallbackName -> callbacks.onSaveToOrbitNova(entry, fallbackName) },
                                 onOpenPlaylist = callbacks.onOpenPlaylist,
                             )
                         }
@@ -290,7 +295,7 @@ internal fun OrbitAiContent(
 }
 
 /**
- * How many Orbit AI requests are left: a ring for the 3-hour allowance (brand gradient,
+ * How many OrbitNova AI requests are left: a ring for the 3-hour allowance (brand gradient,
  * amber when few are left), when the next one comes back, and the all-time total.
  */
 @Composable
@@ -510,6 +515,8 @@ private fun AnswerCard(
     onShuffle: () -> Unit,
     save: YouTubeSave?,
     onSave: (fallbackName: String) -> Unit,
+    localSave: YouTubeSave?,
+    onSaveLocal: (fallbackName: String) -> Unit,
     onOpenPlaylist: (Playlist) -> Unit,
 ) {
     val colors = OrbitTheme.colors
@@ -550,11 +557,19 @@ private fun AnswerCard(
                     OrbitPlayButton(isPlaying = false, onClick = { onPlay(0) }, size = 52.dp)
                 }
             }
-            SaveToYouTubeRow(
-                save = save,
-                onSave = { onSave(fallbackName) },
+            SavePlaylistRow(
+                save = localSave,
+                target = SaveTarget.OrbitNova,
+                onSave = { onSaveLocal(fallbackName) },
                 onOpenPlaylist = onOpenPlaylist,
                 modifier = Modifier.padding(horizontal = 16.dp).padding(top = 12.dp),
+            )
+            SavePlaylistRow(
+                save = save,
+                target = SaveTarget.YouTube,
+                onSave = { onSave(fallbackName) },
+                onOpenPlaylist = onOpenPlaylist,
+                modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
             )
             Spacer(Modifier.height(8.dp))
             playlist.songs.forEachIndexed { index, song ->
@@ -570,10 +585,35 @@ private fun AnswerCard(
     }
 }
 
-/** "Add playlist to YouTube", then its progress, the result (with Open) or the error. */
+/** Where an AI playlist is saved, with the texts for each step. */
+private enum class SaveTarget(
+    val buttonLabel: Int,
+    val progressLabel: Int,
+    val savedPlural: Int,
+    val missingPlural: Int,
+    val savedNote: Int,
+) {
+    OrbitNova(
+        R.string.ai_save_to_orbitnova,
+        R.string.ai_save_local_progress,
+        R.plurals.ai_saved_local,
+        R.plurals.ai_saved_local_missing,
+        R.string.ai_saved_local_note,
+    ),
+    YouTube(
+        R.string.ai_save_to_youtube,
+        R.string.ai_save_progress,
+        R.plurals.ai_saved,
+        R.plurals.ai_saved_missing,
+        R.string.ai_saved_private,
+    ),
+}
+
+/** "Add playlist to OrbitNova / YouTube", then its progress, the result (with Open) or the error. */
 @Composable
-private fun SaveToYouTubeRow(
+private fun SavePlaylistRow(
     save: YouTubeSave?,
+    target: SaveTarget,
     onSave: () -> Unit,
     onOpenPlaylist: (Playlist) -> Unit,
     modifier: Modifier = Modifier,
@@ -582,9 +622,9 @@ private fun SaveToYouTubeRow(
     Box(modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
         when (save) {
             null -> OrbitTonalButton(
-                text = stringResource(R.string.ai_save_to_youtube),
+                text = stringResource(target.buttonLabel),
                 onClick = onSave,
-                leadingIcon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                leadingIcon = if (target == SaveTarget.OrbitNova) Icons.Rounded.LibraryAdd else Icons.AutoMirrored.Rounded.PlaylistAdd,
                 modifier = Modifier.fillMaxWidth().height(46.dp),
             )
             is YouTubeSave.Saving -> Column {
@@ -592,7 +632,7 @@ private fun SaveToYouTubeRow(
                     OrbitLoader(size = 24.dp)
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        stringResource(R.string.ai_save_progress, save.done, save.total),
+                        stringResource(target.progressLabel, save.done, save.total),
                         style = OrbitTheme.type.smallLabel,
                         color = colors.textSecondary,
                     )
@@ -628,15 +668,15 @@ private fun SaveToYouTubeRow(
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        pluralStringResource(R.plurals.ai_saved, save.added, save.added),
+                        pluralStringResource(target.savedPlural, save.added, save.added),
                         style = OrbitTheme.type.smallLabel,
                         color = colors.textPrimary,
                     )
                     Text(
                         text = if (save.missing > 0) {
-                            pluralStringResource(R.plurals.ai_saved_missing, save.missing, save.missing)
+                            pluralStringResource(target.missingPlural, save.missing, save.missing)
                         } else {
-                            stringResource(R.string.ai_saved_private)
+                            stringResource(target.savedNote)
                         },
                         style = OrbitTheme.type.tabLabel,
                         color = colors.textSecondary,
@@ -737,7 +777,7 @@ private fun PromptInput(enabled: Boolean, onSend: (String) -> Unit) {
 
 private const val MAX_PROMPT_LENGTH = 300
 
-internal val noAiCallbacks = OrbitAiCallbacks({}, {}, {}, {}, { _, _ -> }, {}, {}, { _, _ -> }, {}, {})
+internal val noAiCallbacks = OrbitAiCallbacks({}, {}, {}, {}, { _, _ -> }, {}, {}, { _, _ -> }, { _, _ -> }, {}, {})
 
 @OrbitPreviews
 @Composable

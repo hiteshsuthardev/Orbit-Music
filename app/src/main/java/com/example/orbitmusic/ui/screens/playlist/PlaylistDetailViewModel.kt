@@ -1,27 +1,48 @@
 package com.example.orbitmusic.ui.screens.playlist
 
+import android.app.Activity
+import android.app.PendingIntent
+import android.content.Intent
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.example.orbitmusic.domain.ai.SaveAiPlaylistResult
 import com.example.orbitmusic.domain.model.AppError
+import com.example.orbitmusic.domain.model.AuthorizationOutcome
 import com.example.orbitmusic.domain.model.PlaylistDetail
 import com.example.orbitmusic.domain.model.Resource
+import com.example.orbitmusic.domain.usecase.auth.CompleteAuthorizationUseCase
+import com.example.orbitmusic.domain.usecase.auth.RequestPlaylistEditAccessUseCase
 import com.example.orbitmusic.domain.usecase.player.PlaySongsUseCase
+import com.example.orbitmusic.domain.usecase.playlist.DeleteLocalPlaylistUseCase
 import com.example.orbitmusic.domain.usecase.playlist.GetPlaylistQueueUseCase
 import com.example.orbitmusic.domain.usecase.playlist.LoadMorePlaylistItemsUseCase
 import com.example.orbitmusic.domain.usecase.playlist.ObservePlaylistDetailUseCase
 import com.example.orbitmusic.domain.usecase.playlist.RefreshPlaylistUseCase
+import com.example.orbitmusic.domain.usecase.playlist.SavePlaylistToYouTubeUseCase
+import com.example.orbitmusic.ui.screens.ai.YouTubeSave
 import com.example.orbitmusic.ui.navigation.PlaylistDetailRoute
 import com.example.orbitmusic.util.NetworkMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+sealed interface PlaylistDetailEvent {
+    /** Google must ask for permission to manage the user's YouTube playlists. */
+    data class LaunchConsent(val pendingIntent: PendingIntent) : PlaylistDetailEvent
+
+    /** The OrbitNova playlist was deleted; leave the screen. */
+    data object Deleted : PlaylistDetailEvent
+}
 
 data class PlaylistDetailUiState(
     val detail: PlaylistDetail? = null,
@@ -31,6 +52,8 @@ data class PlaylistDetailUiState(
     val isPreparingPlayback: Boolean = false,
     val error: AppError? = null,
     val isOffline: Boolean = false,
+    /** "Save to YouTube" progress for an OrbitNova playlist. */
+    val youTubeSave: YouTubeSave? = null,
 ) {
     val isInitialLoading: Boolean get() = detail == null && isRefreshing
 }
@@ -44,7 +67,20 @@ class PlaylistDetailViewModel @Inject constructor(
     private val getPlaylistQueue: GetPlaylistQueueUseCase,
     private val playSongs: PlaySongsUseCase,
     networkMonitor: NetworkMonitor,
+    private val savePlaylistToYouTube: SavePlaylistToYouTubeUseCase,
+    private val deleteLocalPlaylist: DeleteLocalPlaylistUseCase,
+    private val requestPlaylistEditAccess: RequestPlaylistEditAccessUseCase,
+    private val completeAuthorization: CompleteAuthorizationUseCase,
 ) : ViewModel() {
+
+    private val _events = Channel<PlaylistDetailEvent>(Channel.BUFFERED)
+    val events: Flow<PlaylistDetailEvent> = _events.receiveAsFlow()
+
+    private val youTubeSave = MutableStateFlow<YouTubeSave?>(null)
+
+    /** A YouTube copy that was started but not finished, to continue instead of starting over. */
+    private var partialYouTubeId: String? = null
+    private var partialAdded = 0
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailRoute>().playlistId
 
@@ -59,7 +95,8 @@ class PlaylistDetailViewModel @Inject constructor(
         observePlaylistDetail(playlistId),
         status,
         networkMonitor.isOnline,
-    ) { detail, s, online ->
+        youTubeSave,
+    ) { detail, s, online, save ->
         PlaylistDetailUiState(
             detail = detail,
             isRefreshing = s.refreshing,
@@ -67,6 +104,7 @@ class PlaylistDetailViewModel @Inject constructor(
             isPreparingPlayback = s.preparing,
             error = s.error,
             isOffline = !online,
+            youTubeSave = save,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlaylistDetailUiState(isRefreshing = true))
 
@@ -106,6 +144,62 @@ class PlaylistDetailViewModel @Inject constructor(
                 Resource.Loading -> Unit
             }
             preparing.value = false
+        }
+    }
+
+    /** Copies this OrbitNova playlist to YouTube, asking for playlist permission first if needed. */
+    fun saveToYouTube() {
+        if (youTubeSave.value is YouTubeSave.Saving) return
+        youTubeSave.value = YouTubeSave.Saving(partialAdded, uiState.value.detail?.songs?.size ?: 0)
+        viewModelScope.launch {
+            when (val outcome = requestPlaylistEditAccess()) {
+                AuthorizationOutcome.Granted -> copyToYouTube()
+                is AuthorizationOutcome.NeedsConsent -> _events.send(PlaylistDetailEvent.LaunchConsent(outcome.pendingIntent))
+                is AuthorizationOutcome.Failed -> youTubeSave.value = YouTubeSave.Failed(outcome.error)
+            }
+        }
+    }
+
+    fun onConsentResult(resultCode: Int, data: Intent?) {
+        if (resultCode != Activity.RESULT_OK) {
+            youTubeSave.value = YouTubeSave.Failed(AppError.PermissionRequired)
+            return
+        }
+        viewModelScope.launch {
+            when (val result = completeAuthorization(data)) {
+                is Resource.Success -> copyToYouTube()
+                is Resource.Error -> youTubeSave.value = YouTubeSave.Failed(result.error)
+                Resource.Loading -> Unit
+            }
+        }
+    }
+
+    private suspend fun copyToYouTube() {
+        val playlist = uiState.value.detail?.playlist ?: return
+        val result = savePlaylistToYouTube(playlist, partialYouTubeId, partialAdded) { done, total ->
+            youTubeSave.value = YouTubeSave.Saving(done, total)
+        }
+        youTubeSave.value = when (result) {
+            is SaveAiPlaylistResult.Saved -> {
+                partialYouTubeId = null
+                partialAdded = 0
+                YouTubeSave.Saved(result.playlist, result.added, result.missing)
+            }
+            is SaveAiPlaylistResult.Failed -> {
+                result.playlist?.let {
+                    partialYouTubeId = it.id
+                    partialAdded = result.added
+                }
+                YouTubeSave.Failed(result.error)
+            }
+        }
+    }
+
+    /** Deletes this OrbitNova playlist (YouTube playlists are never deleted from the app). */
+    fun delete() {
+        viewModelScope.launch {
+            deleteLocalPlaylist(playlistId)
+            _events.send(PlaylistDetailEvent.Deleted)
         }
     }
 

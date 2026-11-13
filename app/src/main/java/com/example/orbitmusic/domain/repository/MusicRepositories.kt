@@ -33,8 +33,16 @@ interface PlaylistRepository {
     /** Needs the youtube (write) scope. */
     suspend fun createPlaylist(title: String, description: String, privacy: PlaylistPrivacy): Resource<Playlist>
 
-    /** Needs the youtube (write) scope. */
+    /** Needs the youtube (write) scope, except for OrbitNova playlists. */
     suspend fun addSongToPlaylist(playlistId: String, song: Song): Resource<Unit>
+
+    /** Stores a playlist in OrbitNova only (no YouTube, no quota). */
+    suspend fun createLocalPlaylist(title: String, description: String, songs: List<Song>): Playlist
+
+    /** Remembers that OrbitNova playlist [localId] was saved to YouTube as [youTubeId]. */
+    suspend fun linkToYouTube(localId: String, youTubeId: String)
+
+    suspend fun deleteLocalPlaylist(localId: String)
 }
 
 interface SongRepository {

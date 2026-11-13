@@ -94,6 +94,37 @@ data class ChannelEntity(
     val updatedAt: Long,
 )
 
+/** A playlist stored only in OrbitNova (on this device). */
+@Entity(tableName = "local_playlists")
+data class LocalPlaylistEntity(
+    @PrimaryKey val id: String,
+    val title: String,
+    val description: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+    /** Set once the playlist was also saved to the user's YouTube account. */
+    val youTubePlaylistId: String?,
+)
+
+/** Ordered songs of a [LocalPlaylistEntity]; song data lives in [SongEntity]. */
+@Entity(
+    tableName = "local_playlist_songs",
+    primaryKeys = ["playlistId", "position"],
+    indices = [Index("videoId")],
+)
+data class LocalPlaylistSongEntity(
+    val playlistId: String,
+    val position: Int,
+    val videoId: String,
+)
+
+/** A local playlist with its song count and the first song's artwork. */
+data class LocalPlaylistRow(
+    @androidx.room.Embedded val playlist: LocalPlaylistEntity,
+    val itemCount: Int,
+    val thumbnailUrl: String?,
+)
+
 /** Builders for [CollectionItemEntity.collectionKey] / [CacheMetadataEntity.key]. */
 object CollectionKeys {
     const val MY_PLAYLISTS = "my_playlists"

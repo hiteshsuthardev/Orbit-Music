@@ -63,7 +63,7 @@ data class OrbitBottomBarItem(
     val content: (@Composable (selected: Boolean) -> Unit)? = null,
 )
 
-/** The raised centre action (Orbit AI): sits between the first and second half of the items. */
+/** The raised centre action (OrbitNova AI): sits between the first and second half of the items. */
 @Immutable
 data class OrbitBottomBarCenter(
     val label: String,

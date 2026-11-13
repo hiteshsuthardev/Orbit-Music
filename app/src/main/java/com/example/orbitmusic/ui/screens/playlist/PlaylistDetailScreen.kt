@@ -2,7 +2,11 @@ package com.example.orbitmusic.ui.screens.playlist
 
 import android.content.Context
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -29,10 +33,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -46,13 +54,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,6 +77,8 @@ import com.example.orbitmusic.domain.model.Playlist
 import com.example.orbitmusic.domain.model.PlaylistDetail
 import com.example.orbitmusic.domain.model.Song
 import com.example.orbitmusic.ui.common.LoadMoreEffect
+import com.example.orbitmusic.ui.common.ObserveAsEvents
+import com.example.orbitmusic.ui.common.messageRes
 import com.example.orbitmusic.ui.components.OfflineBanner
 import com.example.orbitmusic.ui.components.OrbitArtwork
 import com.example.orbitmusic.ui.components.OrbitEmptyState
@@ -77,8 +90,10 @@ import com.example.orbitmusic.ui.components.StaggeredAppear
 import com.example.orbitmusic.ui.components.orbit.OrbitLoader
 import com.example.orbitmusic.ui.components.previewSong
 import com.example.orbitmusic.ui.player.rememberArtworkTint
+import com.example.orbitmusic.ui.screens.ai.YouTubeSave
 import com.example.orbitmusic.ui.screens.songactions.LocalSongActions
 import com.example.orbitmusic.ui.theme.OrbitMusicTheme
+import com.example.orbitmusic.ui.theme.orbit.BrandColors
 import com.example.orbitmusic.ui.theme.orbit.IconButtonStyle
 import com.example.orbitmusic.ui.theme.orbit.OrbitDimens
 import com.example.orbitmusic.ui.theme.orbit.OrbitIconButton
@@ -86,7 +101,9 @@ import com.example.orbitmusic.ui.theme.orbit.OrbitPlayButton
 import com.example.orbitmusic.ui.theme.orbit.OrbitPreviews
 import com.example.orbitmusic.ui.theme.orbit.OrbitShapes
 import com.example.orbitmusic.ui.theme.orbit.OrbitSheet
+import com.example.orbitmusic.ui.theme.orbit.OrbitTextButton
 import com.example.orbitmusic.ui.theme.orbit.OrbitTheme
+import com.example.orbitmusic.ui.theme.orbit.OrbitTonalButton
 import com.example.orbitmusic.ui.theme.orbit.contentColorOn
 import com.example.orbitmusic.ui.theme.orbit.floatingShadow
 
@@ -104,6 +121,17 @@ fun PlaylistDetailScreen(
     val context = LocalContext.current
     val listState = rememberLazyListState()
     LoadMoreEffect(listState, viewModel::loadMore)
+    val consentLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult(),
+    ) { result -> viewModel.onConsentResult(result.resultCode, result.data) }
+    ObserveAsEvents(viewModel.events) { event ->
+        when (event) {
+            is PlaylistDetailEvent.LaunchConsent -> consentLauncher.launch(
+                IntentSenderRequest.Builder(event.pendingIntent.intentSender).build(),
+            )
+            PlaylistDetailEvent.Deleted -> onBack()
+        }
+    }
 
     PlaylistDetailContent(
         state = state,
@@ -115,8 +143,12 @@ fun PlaylistDetailScreen(
             onDismissError = viewModel::dismissError,
             onPlayAll = { viewModel.play(shuffle = false) },
             onShuffle = { viewModel.play(shuffle = true) },
-            onShare = { playlist -> sharePlaylist(context, playlist) },
-            onOpenInYouTube = { playlist -> context.startActivity(Intent(Intent.ACTION_VIEW, playlist.shareUrl.toUri())) },
+            onShare = { playlist -> sharePlaylist(context, playlist, state.detail?.songs.orEmpty()) },
+            onOpenInYouTube = { playlist ->
+                playlist.shareUrl?.let { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, it.toUri())) } }
+            },
+            onSaveToYouTube = viewModel::saveToYouTube,
+            onDelete = viewModel::delete,
             onPlaySong = { songs, song -> actions.play(songs, song) },
             onSongMenu = actions::showMenu,
         ),
@@ -131,6 +163,8 @@ internal class PlaylistCallbacks(
     val onShuffle: () -> Unit,
     val onShare: (Playlist) -> Unit,
     val onOpenInYouTube: (Playlist) -> Unit,
+    val onSaveToYouTube: () -> Unit,
+    val onDelete: () -> Unit,
     val onPlaySong: (List<Song>, Song) -> Unit,
     val onSongMenu: (Song) -> Unit,
 )
@@ -154,6 +188,7 @@ internal fun PlaylistDetailContent(
     val tint = rememberArtworkTint(detail?.playlist?.thumbnailUrl)
     val onTint = contentColorOn(tint)
     var showMenu by rememberSaveable { mutableStateOf(false) }
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
 
     BoxWithConstraints(
         Modifier
@@ -198,6 +233,9 @@ internal fun PlaylistDetailContent(
                                 onPlayAll = callbacks.onPlayAll,
                                 onShuffle = callbacks.onShuffle,
                                 onShare = { callbacks.onShare(detail.playlist) },
+                                youTubeSave = state.youTubeSave,
+                                onSaveToYouTube = callbacks.onSaveToYouTube,
+                                onOpenInYouTube = { callbacks.onOpenInYouTube(it) },
                             )
                         }
                         if (state.isOffline) {
@@ -268,6 +306,7 @@ internal fun PlaylistDetailContent(
 
     if (showMenu && detail != null) {
         PlaylistMenuSheet(
+            playlist = detail.playlist,
             onDismiss = { showMenu = false },
             onShare = {
                 showMenu = false
@@ -276,6 +315,37 @@ internal fun PlaylistDetailContent(
             onOpenInYouTube = {
                 showMenu = false
                 callbacks.onOpenInYouTube(detail.playlist)
+            },
+            onDelete = {
+                showMenu = false
+                confirmDelete = true
+            },
+        )
+    }
+    if (confirmDelete && detail != null) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            containerColor = colors.surface,
+            titleContentColor = colors.textPrimary,
+            textContentColor = colors.textSecondary,
+            shape = OrbitShapes.GroupedList,
+            title = { Text(stringResource(R.string.playlist_delete_title), style = OrbitTheme.type.sectionTitle) },
+            text = {
+                Text(
+                    stringResource(
+                        if (detail.playlist.linkedYouTubeId != null) R.string.playlist_delete_body_linked else R.string.playlist_delete_body,
+                    ),
+                    style = OrbitTheme.type.body,
+                )
+            },
+            confirmButton = {
+                OrbitTextButton(stringResource(R.string.playlist_delete_confirm), {
+                    confirmDelete = false
+                    callbacks.onDelete()
+                })
+            },
+            dismissButton = {
+                OrbitTextButton(stringResource(R.string.settings_cancel), { confirmDelete = false }, color = colors.textSecondary)
             },
         )
     }
@@ -288,6 +358,9 @@ internal fun PlaylistHeader(
     onPlayAll: () -> Unit,
     onShuffle: () -> Unit,
     onShare: () -> Unit,
+    youTubeSave: YouTubeSave? = null,
+    onSaveToYouTube: () -> Unit = {},
+    onOpenInYouTube: (Playlist) -> Unit = {},
 ) {
     val colors = OrbitTheme.colors
     val playlist = detail.playlist
@@ -372,15 +445,114 @@ internal fun PlaylistHeader(
                 OrbitPlayButton(isPlaying = false, onClick = onPlayAll, size = 58.dp, enabled = canPlay)
             }
         }
+        // Only for playlists kept in OrbitNova that aren't on YouTube yet.
+        if (playlist.isLocal && (playlist.linkedYouTubeId == null || youTubeSave is YouTubeSave.Saved)) {
+            Spacer(Modifier.height(16.dp))
+            SaveToYouTubeSection(
+                save = youTubeSave,
+                hasSongs = detail.songs.isNotEmpty(),
+                onSave = onSaveToYouTube,
+                onOpen = onOpenInYouTube,
+            )
+        }
         Spacer(Modifier.height(8.dp))
     }
 }
 
+/** "Save to YouTube" for an OrbitNova playlist, then its progress, result or error. */
 @Composable
-private fun PlaylistMenuSheet(onDismiss: () -> Unit, onShare: () -> Unit, onOpenInYouTube: () -> Unit) {
+private fun SaveToYouTubeSection(
+    save: YouTubeSave?,
+    hasSongs: Boolean,
+    onSave: () -> Unit,
+    onOpen: (Playlist) -> Unit,
+) {
+    val colors = OrbitTheme.colors
+    Box(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
+        when (save) {
+            null -> Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                OrbitTonalButton(
+                    text = stringResource(R.string.playlist_save_to_youtube),
+                    onClick = onSave,
+                    leadingIcon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                    enabled = hasSongs,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    stringResource(R.string.playlist_only_in_orbitnova),
+                    style = OrbitTheme.type.tabLabel,
+                    color = colors.textSecondary,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            is YouTubeSave.Saving -> Column(Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OrbitLoader(size = 24.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        stringResource(R.string.ai_save_progress, save.done, save.total),
+                        style = OrbitTheme.type.smallLabel,
+                        color = colors.textSecondary,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                val progress by animateFloatAsState(
+                    if (save.total == 0) 0f else save.done.toFloat() / save.total,
+                    label = "youTubeSaveProgress",
+                )
+                Box(Modifier.fillMaxWidth().height(4.dp).clip(OrbitShapes.Pill).background(colors.divider)) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth(progress)
+                            .height(4.dp)
+                            .clip(OrbitShapes.Pill)
+                            .background(BrandColors.Gradient),
+                    )
+                }
+            }
+            is YouTubeSave.Saved -> Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = colors.accentText, modifier = Modifier.size(24.dp))
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        pluralStringResource(R.plurals.ai_saved, save.added, save.added),
+                        style = OrbitTheme.type.smallLabel,
+                        color = colors.textPrimary,
+                    )
+                    Text(stringResource(R.string.ai_saved_private), style = OrbitTheme.type.tabLabel, color = colors.textSecondary)
+                }
+                OrbitTextButton(text = stringResource(R.string.ai_save_open), onClick = { onOpen(save.playlist) })
+            }
+            is YouTubeSave.Failed -> Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(save.error.messageRes()),
+                    style = OrbitTheme.type.tabLabel,
+                    color = colors.textSecondary,
+                    modifier = Modifier.weight(1f),
+                )
+                OrbitTextButton(text = stringResource(R.string.ai_save_retry), onClick = onSave)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlaylistMenuSheet(
+    playlist: Playlist,
+    onDismiss: () -> Unit,
+    onShare: () -> Unit,
+    onOpenInYouTube: () -> Unit,
+    onDelete: () -> Unit,
+) {
     OrbitSheet(onDismissRequest = onDismiss) {
         MenuRow(Icons.Rounded.Share, stringResource(R.string.playlist_share), onShare)
-        MenuRow(Icons.AutoMirrored.Rounded.OpenInNew, stringResource(R.string.playlist_open_in_youtube), onOpenInYouTube)
+        if (playlist.shareUrl != null) {
+            MenuRow(Icons.AutoMirrored.Rounded.OpenInNew, stringResource(R.string.playlist_open_in_youtube), onOpenInYouTube)
+        }
+        if (playlist.isLocal) {
+            MenuRow(Icons.Rounded.DeleteOutline, stringResource(R.string.playlist_delete), onDelete)
+        }
         Spacer(Modifier.height(12.dp))
     }
 }
@@ -402,11 +574,17 @@ private fun MenuRow(icon: ImageVector, label: String, onClick: () -> Unit) {
     }
 }
 
-private fun sharePlaylist(context: Context, playlist: Playlist) {
+/** Shares the YouTube link, or for an OrbitNova-only playlist the list of its songs. */
+private fun sharePlaylist(context: Context, playlist: Playlist, songs: List<Song>) {
+    val text = playlist.shareUrl?.let { context.getString(R.string.share_playlist_text, playlist.title, it) }
+        ?: buildString {
+            append(playlist.title)
+            songs.forEachIndexed { index, song -> append("\n${index + 1}. ${song.title} – ${song.artist}") }
+        }
     val send = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_SUBJECT, playlist.title)
-        putExtra(Intent.EXTRA_TEXT, context.getString(R.string.share_playlist_text, playlist.title, playlist.shareUrl))
+        putExtra(Intent.EXTRA_TEXT, text)
     }
     context.startActivity(Intent.createChooser(send, context.getString(R.string.share_chooser_title)))
 }
@@ -424,7 +602,7 @@ fun formatLongDuration(millis: Long): String {
     }
 }
 
-internal val noPlaylistCallbacks = PlaylistCallbacks({}, {}, {}, {}, {}, {}, {}, { _, _ -> }, {})
+internal val noPlaylistCallbacks = PlaylistCallbacks({}, {}, {}, {}, {}, {}, {}, {}, {}, { _, _ -> }, {})
 
 @OrbitPreviews
 @Composable

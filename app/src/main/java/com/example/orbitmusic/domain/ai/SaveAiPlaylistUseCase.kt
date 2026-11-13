@@ -9,7 +9,7 @@ import com.example.orbitmusic.domain.usecase.playlist.AddSongToPlaylistUseCase
 import com.example.orbitmusic.domain.usecase.playlist.CreatePlaylistUseCase
 import javax.inject.Inject
 
-/** How saving an Orbit AI playlist to YouTube ended. */
+/** How saving an OrbitNova AI playlist to YouTube ended. */
 sealed interface SaveAiPlaylistResult {
     /** Created; [missing] suggestions had no match on YouTube and were left out. */
     data class Saved(val playlist: Playlist, val added: Int, val missing: Int) : SaveAiPlaylistResult
@@ -19,7 +19,7 @@ sealed interface SaveAiPlaylistResult {
 }
 
 /**
- * Saves an Orbit AI playlist to the user's YouTube account as a private playlist: creates it,
+ * Saves an OrbitNova AI playlist to the user's YouTube account as a private playlist: creates it,
  * then looks each suggestion up on YouTube and adds the match. Needs playlist edit access
  * (the caller asks for it first). Unmatched songs are skipped; any other error stops.
  */
@@ -68,6 +68,6 @@ class SaveAiPlaylistUseCase @Inject constructor(
     }
 
     private companion object {
-        const val MADE_WITH = "Made with Orbit AI"
+        const val MADE_WITH = "Made with OrbitNova AI"
     }
 }

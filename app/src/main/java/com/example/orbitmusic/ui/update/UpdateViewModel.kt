@@ -49,7 +49,7 @@ data class UpdateUiState(
     /** Optional update dialog. */
     val offered: AppUpdate? = null,
     val download: DownloadState = DownloadState.Idle,
-    /** Android needs the user to allow installs from Orbit Music first. */
+    /** Android needs the user to allow installs from OrbitNova Music first. */
     val needsInstallPermission: Boolean = false,
     val manualCheck: ManualCheck = ManualCheck.Idle,
 )

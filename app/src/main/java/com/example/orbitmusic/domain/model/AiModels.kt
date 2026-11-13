@@ -3,7 +3,7 @@ package com.example.orbitmusic.domain.model
 /** A song the AI suggested: names only, never a video id or URL. */
 data class AiSongSuggestion(val title: String, val artist: String)
 
-/** A playlist suggested by Orbit AI. */
+/** A playlist suggested by OrbitNova AI. */
 data class AiPlaylist(
     val name: String,
     val description: String,

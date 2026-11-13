@@ -24,8 +24,22 @@ data class Playlist(
     val thumbnailUrl: String?,
     val itemCount: Int,
     val ownerName: String?,
+    /** OrbitNova playlists only: the YouTube copy, once it was saved there. */
+    val linkedYouTubeId: String? = null,
 ) {
-    val shareUrl: String get() = "https://music.youtube.com/playlist?list=$id"
+    /** Stored only in OrbitNova (on this device), not a YouTube playlist. */
+    val isLocal: Boolean get() = isLocalId(id)
+
+    /** The playlist on YouTube, or null for an OrbitNova playlist that isn't saved there. */
+    val youTubeId: String? get() = if (isLocal) linkedYouTubeId else id
+
+    val shareUrl: String? get() = youTubeId?.let { "https://music.youtube.com/playlist?list=$it" }
+
+    companion object {
+        const val LOCAL_ID_PREFIX = "orbitnova-"
+
+        fun isLocalId(id: String): Boolean = id.startsWith(LOCAL_ID_PREFIX)
+    }
 }
 
 /** A YouTube channel, presented as an artist. */

@@ -18,7 +18,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Orbit AI usage in its own DataStore, keyed by user id: recent request times (comma
+ * OrbitNova AI usage in its own DataStore, keyed by user id: recent request times (comma
  * separated millis, only those inside the limit window) and the all-time count.
  */
 @Singleton

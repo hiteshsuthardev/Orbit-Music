@@ -21,7 +21,7 @@ class RemoteConfigViewModel @Inject constructor(
     private val repository: RemoteConfigRepository,
 ) : ViewModel() {
 
-    /** Orbit AI can be switched off remotely (hides its button). */
+    /** OrbitNova AI can be switched off remotely (hides its button). */
     val aiEnabled: StateFlow<Boolean> = repository.config
         .map { it.featureAiEnabled }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)

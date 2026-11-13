@@ -46,7 +46,7 @@ class YouTubePlaybackEngine @Inject constructor(
         // Keep playing when the view's window is hidden (see class docs for caveats).
         enableBackgroundPlayback(true)
         val options = IFramePlayerOptions.Builder(context)
-            .controls(0) // Orbit Music draws its own controls; YouTube branding stays visible.
+            .controls(0) // OrbitNova Music draws its own controls; YouTube branding stays visible.
             .rel(0)
             .ivLoadPolicy(3)
             .ccLoadPolicy(0)

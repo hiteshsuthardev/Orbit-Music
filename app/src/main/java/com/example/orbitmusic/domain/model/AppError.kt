@@ -25,10 +25,13 @@ sealed interface AppError {
     data object PlayServicesUnavailable : AppError
     data object ConsentDenied : AppError
 
+    /** The Google account has no YouTube channel, which YouTube needs to create playlists. */
+    data object NoYouTubeChannel : AppError
+
     /** The user revoked access or the grant can no longer be renewed silently. */
     data object AuthorizationRequired : AppError
 
-    // Orbit AI
+    // OrbitNova AI
     /** No AI endpoint, model or (debug) API key configured. */
     data object AiNotConfigured : AppError
 

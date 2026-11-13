@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Orbit Music logo for the splash screen: a white planet with a tilted white ring
+    OrbitNova Music logo for the splash screen: a white planet with a tilted white ring
     (white on coloured backgrounds). 288dp canvas with the artwork inside the central 192dp safe circle.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"

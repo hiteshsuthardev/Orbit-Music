@@ -49,12 +49,19 @@ class AuthTokenAuthenticator @Inject constructor(
 ) : Authenticator {
     override fun authenticate(route: Route?, response: Response): Request? {
         if (response.priorResponseCount() >= 1) return null
+        // No YouTube channel: a new token won't help, and renewing could wrongly sign the user out.
+        val body = runCatching { response.peekBody(PEEK_BYTES).string() }.getOrDefault("")
+        if (ApiErrorMapper.NO_CHANNEL_REASON in body) return null
         val failedToken = response.request.header(AUTHORIZATION)?.removePrefix(BEARER)
         val refreshed = runBlocking { authRepository.get().getAccessToken(forceRefresh = true) }
         if (refreshed !is Resource.Success || refreshed.data == failedToken) return null
         return response.request.newBuilder()
             .header(AUTHORIZATION, BEARER + refreshed.data)
             .build()
+    }
+
+    private companion object {
+        const val PEEK_BYTES = 16_384L
     }
 
     private fun Response.priorResponseCount(): Int {

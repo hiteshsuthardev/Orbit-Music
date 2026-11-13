@@ -1,13 +1,13 @@
 <div align="center">
 
-# 🪐 Orbit Music
+# 🪐 OrbitNova Music
 
 **Your YouTube music, in orbit.**
 
 A beautiful, music-first player for the songs, playlists and likes in your YouTube account,
-with Orbit AI to build a playlist for any mood in seconds.
+with OrbitNova AI to build a playlist for any mood in seconds.
 
-`Version 1.7.0` · Android 8.0 and newer
+`Version 1.9.0` · Android 8.0 and newer
 
 </div>
 
@@ -24,7 +24,7 @@ with Orbit AI to build a playlist for any mood in seconds.
   <img src="docs/screenshots/now-playing.png" alt="Now Playing" width="220" />
 </p>
 <p align="center">
-  <img src="docs/screenshots/orbit-ai.png" alt="Orbit AI" width="220" />
+  <img src="docs/screenshots/orbit-ai.png" alt="OrbitNova AI" width="220" />
   <img src="docs/screenshots/search.png" alt="Search" width="220" />
   <img src="docs/screenshots/profile.png" alt="Profile" width="220" />
 </p>
@@ -34,8 +34,8 @@ with Orbit AI to build a playlist for any mood in seconds.
 ## ✨ Highlights
 
 - **Your music, ready to play.** Sign in once and your YouTube playlists, liked songs and history are all here.
-- **Only music.** Orbit Music shows music videos only, so no Shorts, vlogs or live streams get in the way.
-- **Orbit AI.** Describe a mood, a moment or an artist and get a ready-to-play playlist.
+- **Only music.** OrbitNova Music shows music videos only, so no Shorts, vlogs or live streams get in the way.
+- **OrbitNova AI.** Describe a mood, a moment or an artist and get a ready-to-play playlist.
 - **A player that feels alive.** The screen takes its colours from the song's artwork, and you can switch between the cover and the video.
 - **Made for listening.** Shuffle, repeat, a reorderable queue, a sleep timer, playback speed, and controls on your lock screen and in notifications.
 - **Dark by default, light if you like.** Choose Dark, Light or follow your phone.
@@ -44,10 +44,10 @@ with Orbit AI to build a playlist for any mood in seconds.
 
 ## 🚀 Getting started
 
-1. **Install** Orbit Music on your Android phone.
+1. **Install** OrbitNova Music on your Android phone.
 2. **Open the app.** The welcome screens give a short tour; tap **Next**, or **Skip** to jump ahead.
 3. **Tap "Continue with Google"** and choose your Google account.
-4. **Allow access to YouTube** when asked. Orbit Music only *reads* your playlists and likes; it never changes anything without asking you first.
+4. **Allow access to YouTube** when asked. OrbitNova Music only *reads* your playlists and likes; it never changes anything without asking you first.
 5. **You're in.** Your Home screen fills with your music.
 
 > **Tip:** to switch to another Google account, open **Profile**, tap **Sign out**, and sign in again with the other account.
@@ -62,7 +62,7 @@ The bar at the bottom of the screen takes you everywhere:
 | --- | --- |
 | **Home** | Your personal start page |
 | **Search** | Find any song or playlist |
-| **Orbit AI** (the raised button in the middle) | Ask for a playlist in your own words |
+| **OrbitNova AI** (the raised button in the middle) | Ask for a playlist in your own words |
 | **Library** | Your playlists, liked songs, favorites and history |
 | **Profile** (your Google picture) | Your account, appearance and app settings |
 
@@ -103,11 +103,12 @@ Results you've already seen open instantly, even with a weak connection.
 
 ## 📚 Library
 
-- **Playlists**: all your YouTube playlists in a grid. Tap one to open it.
+- **Playlists**: your OrbitNova playlists (marked "OrbitNova") and all your YouTube playlists in a grid. Tap one to open it.
+- **OrbitNova playlists** are kept in the app on your phone. Open one and tap **Save into YouTube** to copy it to your YouTube account as a private playlist (the button disappears once it's there). Delete one from its **⋯** menu.
 - **Liked songs**: everything you've liked on YouTube.
-- **Favorites**: songs you've saved in Orbit Music with **Add to favorites**.
+- **Favorites**: songs you've saved in OrbitNova Music with **Add to favorites**.
 - **History**: what you've played recently. Tap **Clear history** to start fresh.
-- **Create a playlist** with the **+** button: give it a name, choose Private, Unlisted or Public, and tap **Create playlist**. The first time, Orbit Music asks for permission to manage your playlists.
+- **Create a playlist** with the **+** button: give it a name, choose Private, Unlisted or Public, and tap **Create playlist**. The first time, OrbitNova Music asks for permission to manage your playlists.
 
 ---
 
@@ -121,7 +122,7 @@ While a song plays, a small player floats above the bottom bar with the artwork,
 
 <img src="docs/screenshots/now-playing.png" alt="Now Playing screen" width="260" align="right" />
 
-- Switch between **Poster** (the song's artwork) and **Video** at the top. Orbit Music remembers your choice.
+- Switch between **Poster** (the song's artwork) and **Video** at the top. OrbitNova Music remembers your choice.
 - **Seek** by dragging the progress bar.
 - **Shuffle** and **Repeat** light up pink when they're on. Tap Repeat again to repeat a single song.
 - **♥** saves the song to your Favorites.
@@ -143,26 +144,26 @@ Tap **⋯** next to any song for **Play next**, **Add to queue**, **Add to playl
 
 ---
 
-## 🤖 Orbit AI
+## 🤖 OrbitNova AI
 
-<img src="docs/screenshots/orbit-ai.png" alt="Orbit AI screen" width="260" align="right" />
+<img src="docs/screenshots/orbit-ai.png" alt="OrbitNova AI screen" width="260" align="right" />
 
-Tell Orbit AI what you're in the mood for, in your own words:
+Tell OrbitNova AI what you're in the mood for, in your own words:
 
 > *"Songs for a late night drive"* · *"90s Bollywood hits"* · *"Focus music with no lyrics"*
 
-1. Tap the **Orbit AI** button in the middle of the bottom bar.
+1. Tap the **OrbitNova AI** button in the middle of the bottom bar.
 2. Type a request, or tap one of the suggestions.
 3. Get a playlist with a name, a short description and up to 30 songs.
 4. Tap **▶ Play**, **Shuffle**, or any single song to start from there.
-5. Like it? Tap **Add playlist to YouTube** to save it as a private playlist in your YouTube account, then **Open** to see it. The first time, Orbit Music asks for permission to manage your playlists.
+5. Like it? Tap **Add playlist to OrbitNova** to keep it in your Library, or **Add playlist to YouTube** to save it as a private playlist in your YouTube account, then **Open** to see it. The first time, OrbitNova Music asks for permission to manage your playlists.
 
 **Keep the conversation going.** Follow-ups like *"add 10 more"* or *"remove the slow ones"* refine your playlist.
 Explicit songs are left out unless you turn on **Explicit songs**. Tap **New chat** to start over.
 
 <br clear="right" />
 
-**Fair use.** Each account can send **20 requests every 3 hours**, and the meter above the message box shows how many you have left, when the next one comes back, and how many you have in total. After **220 requests in total**, Orbit AI shows a **Contact developer** screen so you can ask for more.
+**Fair use.** Each account can send **20 requests every 3 hours**, and the meter above the message box shows how many you have left, when the next one comes back, and how many you have in total. After **220 requests in total**, OrbitNova AI shows a **Contact developer** screen so you can ask for more.
 
 ---
 
@@ -174,8 +175,8 @@ Explicit songs are left out unless you turn on **Explicit songs**. Tap **New cha
 - **Appearance**: choose **System**, **Light** or **Dark**.
 - **Clear image cache** to free up space; the screen shows how much it's using.
 - **Clear history** to forget what you've played.
-- **Check for updates** to see if a newer version of Orbit Music is ready.
-- **Sign out**, or **Disconnect YouTube and sign out** to remove Orbit Music's access to your account completely.
+- **Check for updates** to see if a newer version of OrbitNova Music is ready.
+- **Sign out**, or **Disconnect YouTube and sign out** to remove OrbitNova Music's access to your account completely.
 
 <br clear="right" />
 
@@ -183,11 +184,11 @@ Explicit songs are left out unless you turn on **Explicit songs**. Tap **New cha
 
 ## 💡 Good to know
 
-- **Updates:** Orbit Music tells you when a new version is ready. Tap **Update now** and it downloads, checks and installs the update for you. The first time, Android asks you to allow installs from Orbit Music.
+- **Updates:** OrbitNova Music tells you when a new version is ready. Tap **Update now** and it downloads, checks and installs the update for you. The first time, Android asks you to allow installs from OrbitNova Music.
 - **Internet:** songs play from YouTube, so you need a connection to listen. Your lists stay visible offline.
 - **Only music videos:** Shorts, live streams and non-music videos are hidden on purpose.
-- **Accessibility:** Orbit Music works with TalkBack, and if you turn on *Remove animations* in your phone's settings, it keeps everything still.
-- **Your privacy:** Orbit Music only reads your YouTube music by default, asks before making any change to your account, and signing out removes your music data from your phone.
+- **Accessibility:** OrbitNova Music works with TalkBack, and if you turn on *Remove animations* in your phone's settings, it keeps everything still.
+- **Your privacy:** OrbitNova Music only reads your YouTube music by default, asks before making any change to your account, and signing out removes your music data from your phone.
 
 ---
 
@@ -197,6 +198,6 @@ Found a bug or have an idea? Get in touch with the developer, who would love to 
 
 <div align="center">
 
-Made with ♥ for music lovers · **Orbit Music**
+Made with ♥ for music lovers · **OrbitNova Music**
 
 </div>

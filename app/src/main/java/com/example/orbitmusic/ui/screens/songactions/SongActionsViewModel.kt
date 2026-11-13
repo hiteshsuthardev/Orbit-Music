@@ -130,12 +130,8 @@ class SongActionsViewModel @Inject constructor(
 
     fun onAddToPlaylist(song: Song) {
         dismissMenu()
-        val canEdit = (authState.value as? AuthState.SignedIn)?.canEditPlaylists == true
-        if (canEdit) {
-            openPlaylistPicker(song)
-            return
-        }
         viewModelScope.launch {
+            // Silent when the write scope is still granted; returns a token that has it.
             when (val outcome = requestPlaylistEditAccess()) {
                 AuthorizationOutcome.Granted -> openPlaylistPicker(song)
                 is AuthorizationOutcome.NeedsConsent -> {

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Orbit Music</string>
+    <string name="app_name">OrbitNova Music</string>
 
     <!-- Bottom navigation -->
     <string name="nav_home">Home</string>
@@ -18,7 +18,7 @@
     <string name="cd_more_options">More options</string>
     <string name="cd_queue">Queue</string>
     <string name="cd_loading">Loading</string>
-    <string name="cd_orbit_logo">Orbit Music logo</string>
+    <string name="cd_orbit_logo">OrbitNova Music logo</string>
     <string name="cd_search">Search</string>
     <string name="cd_clear_text">Clear text</string>
     <string name="cd_seek_bar">Playback position</string>
@@ -27,7 +27,7 @@
 
     <!-- Design system showcase (Phase 1 verification screen) -->
     <string name="showcase_title">Design system</string>
-    <string name="showcase_subtitle">Every Orbit Music component, in one place.</string>
+    <string name="showcase_subtitle">Every OrbitNova Music component, in one place.</string>
     <string name="showcase_dark_mode">Dark mode</string>
     <string name="showcase_section_palette">Colour tokens</string>
     <string name="showcase_section_typography">Typography</string>
@@ -36,7 +36,7 @@
     <string name="showcase_section_controls">Controls</string>
     <string name="showcase_section_orbit">Loader, logo &amp; states</string>
     <string name="showcase_section_bottom_bar">Bottom bar</string>
-    <string name="showcase_display">Orbit Music</string>
+    <string name="showcase_display">OrbitNova Music</string>
     <string name="showcase_headline">Your playlists</string>
     <string name="showcase_title_text">Midnight Drive</string>
     <string name="showcase_body">Artwork-driven colour, flat surfaces and bold titles.</string>
@@ -72,11 +72,11 @@
     <string name="login_tagline">All your YouTube music, beautifully in orbit.</string>
     <string name="login_continue_with_google">Continue with Google</string>
     <string name="login_reconnect_title">Connect YouTube</string>
-    <string name="login_reconnect_body">Orbit Music needs your permission to read your YouTube library.</string>
+    <string name="login_reconnect_body">OrbitNova Music needs your permission to read your YouTube library.</string>
     <string name="login_signed_in_as">Signed in as %1$s</string>
     <string name="login_reconnect_button">Allow YouTube access</string>
     <string name="login_use_another_account">Use a different account</string>
-    <string name="login_permission_note">Read-only access: Orbit Music can see your playlists and likes but never changes them without asking.</string>
+    <string name="login_permission_note">Read-only access: OrbitNova Music can see your playlists and likes but never changes them without asking.</string>
     <string name="login_terms_note">Playback uses the official YouTube player and follows the YouTube Terms of Service.</string>
     <string name="cd_dismiss_error">Dismiss error</string>
 
@@ -91,10 +91,11 @@
     <string name="error_no_google_account">No Google account found. Add one in your device settings and try again.</string>
     <string name="error_missing_configuration">Google sign-in isn\'t configured. Add GOOGLE_WEB_CLIENT_ID to local.properties and register this app in Google Cloud.</string>
     <string name="error_play_services">Google Play services is unavailable or out of date on this device.</string>
-    <string name="error_consent_denied">Orbit Music needs YouTube access to load your music.</string>
+    <string name="error_consent_denied">OrbitNova Music needs YouTube access to load your music.</string>
     <string name="error_authorization_required">YouTube access was revoked. Please allow access again.</string>
     <string name="error_not_found">This is no longer available on YouTube.</string>
-    <string name="error_permission_required">Allow Orbit Music to manage your YouTube playlists to do this.</string>
+    <string name="error_no_youtube_channel">This Google account doesn\'t have a YouTube channel yet. Open YouTube, create a channel, then try again.</string>
+    <string name="error_permission_required">Allow OrbitNova Music to manage your YouTube playlists to do this.</string>
     <string name="error_unknown">Something went wrong. Please try again.</string>
 
     <!-- Home -->
@@ -123,10 +124,10 @@
     <string name="settings_youtube_access_edit">YouTube: can manage playlists</string>
     <string name="settings_sign_out">Sign out</string>
     <string name="settings_disconnect">Disconnect YouTube and sign out</string>
-    <string name="settings_sign_out_confirm_title">Sign out of Orbit Music?</string>
+    <string name="settings_sign_out_confirm_title">Sign out of OrbitNova Music?</string>
     <string name="settings_sign_out_confirm_body">Your cached playlists, history and favorites on this device will be cleared.</string>
     <string name="settings_disconnect_confirm_title">Disconnect YouTube?</string>
-    <string name="settings_disconnect_confirm_body">This removes Orbit Music\'s access to your YouTube account and clears all local data.</string>
+    <string name="settings_disconnect_confirm_body">This removes OrbitNova Music\'s access to your YouTube account and clears all local data.</string>
     <string name="settings_confirm">Confirm</string>
     <string name="settings_cancel">Cancel</string>
     <string name="settings_version">Version %1$s</string>
@@ -179,7 +180,7 @@
     <string name="library_favorites_empty_title">No favorites yet</string>
     <string name="library_favorites_empty_body">Use “Add to favorites” in any song\'s menu to keep it close.</string>
     <string name="library_history_empty_title">Nothing played yet</string>
-    <string name="library_history_empty_body">Songs you listen to in Orbit Music show up here.</string>
+    <string name="library_history_empty_body">Songs you listen to in OrbitNova Music show up here.</string>
     <string name="library_clear_history">Clear history</string>
 
     <!-- Playlist detail -->
@@ -279,6 +280,13 @@
     <string name="state_quota_body">YouTube\'s daily quota is used up. Saved music still plays; try again later.</string>
     <string name="playlist_share">Share playlist</string>
     <string name="playlist_open_in_youtube">Open in YouTube Music</string>
+    <string name="playlist_save_to_youtube">Save into YouTube</string>
+    <string name="playlist_only_in_orbitnova">This playlist is only in OrbitNova. Save it to see it on YouTube too.</string>
+    <string name="playlist_delete">Delete playlist</string>
+    <string name="playlist_delete_title">Delete this playlist?</string>
+    <string name="playlist_delete_body">It will be removed from OrbitNova. This can\'t be undone.</string>
+    <string name="playlist_delete_body_linked">It will be removed from OrbitNova. The copy on your YouTube account stays.</string>
+    <string name="playlist_delete_confirm">Delete</string>
     <string name="share_playlist_text">Listen to %1$s: %2$s</string>
     <string name="settings_section_storage_about">Storage and about</string>
     <string name="settings_audio_quality">Audio quality</string>
@@ -286,13 +294,13 @@
     <string name="settings_clear_image_cache">Clear image cache</string>
     <string name="settings_cache_size">%1$s used</string>
     <string name="settings_history_cleared">History cleared</string>
-    <string name="settings_about">About Orbit Music</string>
+    <string name="settings_about">About OrbitNova Music</string>
     <string name="create_playlist_title">New playlist</string>
     <string name="create_playlist_name_hint">Playlist name</string>
     <string name="create_playlist_private">Private</string>
     <string name="create_playlist_unlisted">Unlisted</string>
     <string name="create_playlist_public">Public</string>
-    <string name="create_playlist_permission_note">Creates the playlist on your YouTube account. Orbit Music will ask for permission to manage playlists the first time.</string>
+    <string name="create_playlist_permission_note">Creates the playlist on your YouTube account. OrbitNova Music will ask for permission to manage playlists the first time.</string>
     <string name="create_playlist_create">Create playlist</string>
 
     <!-- Now Playing views and lyrics -->
@@ -306,13 +314,24 @@
     <string name="lyrics_instrumental_mark">♪</string>
     <string name="lyrics_source">Lyrics from %1$s</string>
 
-    <!-- Orbit AI -->
+    <!-- OrbitNova AI -->
     <string name="ai_usage_left">%1$d of %2$d requests left</string>
     <string name="ai_usage_next_back">One more at %1$s</string>
     <string name="ai_usage_every_window">Refills every 3 hours</string>
     <string name="ai_usage_total">%1$d of %2$d in total</string>
-    <string name="ai_usage_description">Orbit AI: %1$d of %2$d requests left for the next 3 hours, %3$d of %4$d left in total</string>
+    <string name="ai_usage_description">OrbitNova AI: %1$d of %2$d requests left for the next 3 hours, %3$d of %4$d left in total</string>
     <string name="ai_save_to_youtube">Add playlist to YouTube</string>
+    <string name="ai_save_to_orbitnova">Add playlist to OrbitNova</string>
+    <string name="ai_save_local_progress">Adding to OrbitNova… %1$d of %2$d</string>
+    <plurals name="ai_saved_local">
+        <item quantity="one">Saved in OrbitNova with %d song</item>
+        <item quantity="other">Saved in OrbitNova with %d songs</item>
+    </plurals>
+    <plurals name="ai_saved_local_missing">
+        <item quantity="one">In your Library · %d song wasn’t found</item>
+        <item quantity="other">In your Library · %d songs weren’t found</item>
+    </plurals>
+    <string name="ai_saved_local_note">In your Library, only in OrbitNova</string>
     <string name="ai_save_progress">Adding to YouTube… %1$d of %2$d</string>
     <string name="ai_save_open">Open</string>
     <string name="ai_save_retry">Try again</string>
@@ -326,23 +345,23 @@
     </plurals>
     <string name="ai_saved_private">Private playlist in your YouTube account</string>
     <string name="ai_window_limit_title">You\u2019ve used your %1$d requests for now</string>
-    <string name="ai_window_limit_body">Orbit AI allows %1$d requests every 3 hours. You can ask again at %2$s.</string>
-    <string name="ai_window_limit_body_soon">Orbit AI allows %1$d requests every 3 hours. You can ask again soon.</string>
-    <string name="ai_limit_reached_title">You\u2019ve reached your Orbit AI limit</string>
-    <string name="ai_limit_reached_body">You\u2019ve used all %1$d Orbit AI requests. Contact the developer to get access to more.</string>
-    <string name="ai_limit_reached_body_no_email">You\u2019ve used all %1$d Orbit AI requests. Contact the developer of Orbit Music to get access to more.</string>
+    <string name="ai_window_limit_body">OrbitNova AI allows %1$d requests every 3 hours. You can ask again at %2$s.</string>
+    <string name="ai_window_limit_body_soon">OrbitNova AI allows %1$d requests every 3 hours. You can ask again soon.</string>
+    <string name="ai_limit_reached_title">You\u2019ve reached your OrbitNova AI limit</string>
+    <string name="ai_limit_reached_body">You\u2019ve used all %1$d OrbitNova AI requests. Contact the developer to get access to more.</string>
+    <string name="ai_limit_reached_body_no_email">You\u2019ve used all %1$d OrbitNova AI requests. Contact the developer of OrbitNova Music to get access to more.</string>
     <string name="ai_contact_developer">Contact developer</string>
-    <string name="ai_limit_email_subject">Orbit AI: request for more requests</string>
-    <string name="nav_orbit_ai">Orbit AI</string>
-    <string name="ai_title">Orbit AI</string>
+    <string name="ai_limit_email_subject">OrbitNova AI: request for more requests</string>
+    <string name="nav_orbit_ai">OrbitNova AI</string>
+    <string name="ai_title">OrbitNova AI</string>
     <string name="ai_intro_title">What do you want to hear?</string>
-    <string name="ai_intro_body">Describe a mood, a moment or an artist and Orbit AI builds a playlist. Refine it with follow-ups like “add 10 more”.</string>
-    <string name="ai_input_hint">Ask Orbit AI…</string>
+    <string name="ai_intro_body">Describe a mood, a moment or an artist and OrbitNova AI builds a playlist. Refine it with follow-ups like “add 10 more”.</string>
+    <string name="ai_input_hint">Ask OrbitNova AI…</string>
     <string name="ai_send">Send</string>
     <string name="ai_new_chat">New chat</string>
     <string name="ai_explicit">Explicit songs</string>
-    <string name="ai_thinking">Orbit AI is thinking…</string>
-    <string name="ai_default_playlist_name">Orbit AI mix</string>
+    <string name="ai_thinking">OrbitNova AI is thinking…</string>
+    <string name="ai_default_playlist_name">OrbitNova AI mix</string>
     <string name="ai_lookup_note">Songs are found on YouTube as they play.</string>
     <string name="ai_play_song">Play %1$s by %2$s</string>
     <string name="ai_suggestion_1">Chill evening vibes</string>
@@ -350,21 +369,21 @@
     <string name="ai_suggestion_3">90s Bollywood hits</string>
     <string name="ai_suggestion_4">Focus music, no lyrics</string>
     <string name="ai_suggestion_5">Road trip singalongs</string>
-    <string name="error_ai_not_configured">Orbit AI isn’t set up yet. Add GROQ_API_KEY and GROQ_MODEL to local.properties.</string>
-    <string name="error_ai_invalid_key">Orbit AI couldn’t sign in to the AI service. Check the API key.</string>
-    <string name="error_ai_busy">Orbit AI is busy right now. Try again in a minute.</string>
+    <string name="error_ai_not_configured">OrbitNova AI isn’t set up yet. Add GROQ_API_KEY and GROQ_MODEL to local.properties.</string>
+    <string name="error_ai_invalid_key">OrbitNova AI couldn’t sign in to the AI service. Check the API key.</string>
+    <string name="error_ai_busy">OrbitNova AI is busy right now. Try again in a minute.</string>
     <string name="error_ai_unavailable">The AI service is having trouble. Try again in a moment.</string>
-    <string name="error_ai_timeout">Orbit AI took too long to answer. Try again.</string>
-    <string name="error_ai_bad_response">Orbit AI couldn’t put that playlist together. Try asking a different way.</string>
-    <string name="ai_busy_retrying">Orbit AI is busy, retrying in %1$d seconds</string>
+    <string name="error_ai_timeout">OrbitNova AI took too long to answer. Try again.</string>
+    <string name="error_ai_bad_response">OrbitNova AI couldn’t put that playlist together. Try asking a different way.</string>
+    <string name="ai_busy_retrying">OrbitNova AI is busy, retrying in %1$d seconds</string>
 
     <!-- Self-hosted updates and remote config -->
     <string name="update_available_title">Update available</string>
     <string name="update_version">Version %1$s</string>
     <string name="update_required_title">Update required</string>
-    <string name="update_required_body">This version of Orbit Music is no longer supported. Update to version %1$s to keep listening.</string>
+    <string name="update_required_body">This version of OrbitNova Music is no longer supported. Update to version %1$s to keep listening.</string>
     <string name="update_whats_new">What’s new</string>
-    <string name="update_permission_explanation">To install updates, Android needs your permission. Turn on “Allow from this source” for Orbit Music, then come back here.</string>
+    <string name="update_permission_explanation">To install updates, Android needs your permission. Turn on “Allow from this source” for OrbitNova Music, then come back here.</string>
     <string name="update_open_settings">Open settings</string>
     <string name="update_now">Update now</string>
     <string name="update_cancel">Cancel download</string>
